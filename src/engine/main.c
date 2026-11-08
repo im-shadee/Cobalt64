@@ -14,9 +14,12 @@
  */
 static void transform_to_t3d(T3DMat4FP *out, const mtx4f_t *in) {
     T3DMat4 m;
+    // Map axes: swap X (0) and Y (1), leave Z (2) and W (3) unchanged
+    const int map[4] = {1, 0, 2, 3};
+
     for (int r = 0; r < 4; r++) {
         for (int c = 0; c < 4; c++) {
-            m.m[c][r] = in->m[r][c];
+            m.m[c][r] = in->m[map[r]][map[c]];
         }
     }
     t3d_mat4_to_fixed(out, &m);
@@ -60,13 +63,13 @@ int main(void) {
     update_render_mtx(&cube_tr->render_mtx, cube_tr->position, cube_tr->rotation,
                       cube_tr->scale, cube_tr->shear);
 
-    float rotation_speed = 1.0f; // degrees per frame
+    float rotation_speed = -1.0f; // degrees per frame
     int fb = 0;
 
     while (1) {
         joypad_poll();
 
-        rot.y += rotation_speed;
+        rot.x += rotation_speed;
         transform_set_rotation(cube_tr, rot);
 
         // Rebuild the engine's render matrix only when the transform changed

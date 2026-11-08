@@ -2,9 +2,8 @@
 #define MATRICES_H
 
 #include "custom_int.h"
-#include <stdlib.h>
+#include <assert.h>
 #include <string.h>
-#include <math.h>
 
 /** 32-bit float 4x4 matrix for CPU math and physics */
 typedef union {
@@ -22,11 +21,11 @@ typedef union {
 extern const mtx4f_t IDENTITY;
 
 /** Turns an existing matrix into the identity matrix. */
-static inline void mat4f_identity(mtx4f_t* mtx) { if (mtx) *mtx = IDENTITY; }
+static inline void mat4f_identity(mtx4f_t* mtx) { assert(mtx); *mtx = IDENTITY; }
 
 /** Performs a scalar multiplication on a matrix with a factor k. */
 static inline void mat4f_scale(mtx4f_t* mtx, const float k) {
-    if (!mtx) return;
+    assert(mtx);
 
     #pragma GCC unroll 4
     for (int i = 0; i < 4; i++) {
@@ -37,13 +36,13 @@ static inline void mat4f_scale(mtx4f_t* mtx, const float k) {
 }
 
 /** Sets each of a matrix slots to 0. */
-static inline void mat4f_clear(mtx4f_t* mtx) { if (mtx) memset(mtx, 0, sizeof(*mtx)); }
+static inline void mat4f_clear(mtx4f_t* mtx) { assert(mtx); memset(mtx, 0, sizeof(*mtx)); }
 
 /** 
  * Creates a 4x4 matrix and initializes its contents.
  * Returns a pointer to the created matrix, or NULL if any allocation failed.
  */
-mtx4f_t* mat4f_create();
+mtx4f_t* mat4f_create(void);
 
 /** Multiplies a matrix with another and puts the result into a destination matrix. */
 void mat4f_multiply(mtx4f_t* dest, const mtx4f_t* a, const mtx4f_t* b);

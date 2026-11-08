@@ -1,4 +1,5 @@
 #include "matrices.h"
+#include <assert.h>
 
 const mtx4f_t IDENTITY = {
     1.0f, 0.0f, 0.0f, 0.0f,
@@ -8,7 +9,7 @@ const mtx4f_t IDENTITY = {
 };
 
 // Function implementation
-mtx4f_t* mat4f_create() {
+mtx4f_t* mat4f_create(void) {
     mtx4f_t* mtx = malloc(sizeof(*mtx)); // Allocate space for matrix struct
     if (!mtx) return NULL;
 
@@ -17,7 +18,7 @@ mtx4f_t* mat4f_create() {
 }
 
 void mat4f_multiply(mtx4f_t* dest, const mtx4f_t* a, const mtx4f_t* b) {
-    if (!dest || !a || !b) return;
+    assert(dest && a && b);
 
     const float b00 = b->m[0][0], b01 = b->m[0][1], b02 = b->m[0][2], b03 = b->m[0][3];
     const float b10 = b->m[1][0], b11 = b->m[1][1], b12 = b->m[1][2], b13 = b->m[1][3];
