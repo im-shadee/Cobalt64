@@ -1,4 +1,5 @@
 #include "transform.h"
+#include "trig.h"
 #include "custom_math.h"
 #include <assert.h>
 
@@ -19,15 +20,20 @@ transform_t* transform_create(vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t s
 void update_render_mtx(mtx4f_t* mtx, vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t shr) {
     assert(mtx); // Crash if the passed matrix is null
 
-    // Retrieve LUT indexes from rotation angles
-    int x_idx = angle_to_lut_idx(rot.x);
-    int y_idx = angle_to_lut_idx(rot.y);
-    int z_idx = angle_to_lut_idx(rot.z);
+    // Convert float degrees to 16-bit BAMs
+    uint16_t x_bam = (uint16_t)(rot.x * DEG_TO_BAM);
+    uint16_t y_bam = (uint16_t)(rot.y * DEG_TO_BAM);
+    uint16_t z_bam = (uint16_t)(rot.z * DEG_TO_BAM);
 
-    // Compute angles from sine/cosine LUTs
-    float cx = cos_lut[x_idx], sx = sin_lut[x_idx]; // X axis
-    float cy = cos_lut[y_idx], sy = sin_lut[y_idx]; // Y axis
-    float cz = cos_lut[z_idx], sz = sin_lut[z_idx]; // Z axis
+    // Fetch fixed-point values from LUT and scale them
+    float cx = fixed_cos(x_bam) * FIXED_TO_FLOAT;
+    float sx = fixed_sin(x_bam) * FIXED_TO_FLOAT;
+    
+    float cy = fixed_cos(y_bam) * FIXED_TO_FLOAT;
+    float sy = fixed_sin(y_bam) * FIXED_TO_FLOAT;
+    
+    float cz = fixed_cos(z_bam) * FIXED_TO_FLOAT;
+    float sz = fixed_sin(z_bam) * FIXED_TO_FLOAT;
 
     // Compute rotation matrix values (compute matrix indexes instead of creating matrices)
     float r00 = cy * cz;
