@@ -1,6 +1,6 @@
 #include "matrices.h"
 
-const mat4f IDENTITY = {
+const mtx4f_t IDENTITY = {
     1.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 1.0f, 0.0f, 0.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
@@ -8,15 +8,15 @@ const mat4f IDENTITY = {
 };
 
 // Function implementation
-mat4f* mat4f_create() {
-    mat4f* mtx = malloc(sizeof(*mtx)); // Allocate space for matrix struct
+mtx4f_t* mat4f_create() {
+    mtx4f_t* mtx = malloc(sizeof(*mtx)); // Allocate space for matrix struct
     if (!mtx) return NULL;
 
     mat4f_clear(mtx); // Initialize all slots to 0
     return mtx;
 }
 
-void mat4f_multiply(mat4f* dest, const mat4f* a, const mat4f* b) {
+void mat4f_multiply(mtx4f_t* dest, const mtx4f_t* a, const mtx4f_t* b) {
     if (!dest || !a || !b) return;
 
     const float b00 = b->m[0][0], b01 = b->m[0][1], b02 = b->m[0][2], b03 = b->m[0][3];
