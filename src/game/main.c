@@ -2,13 +2,22 @@
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
 #include "transform.h"
-#include "engine/debug/debug.h"
+#include "bool.h"
+#include "debug.h"
 #include "trig.h"
 
+// Rendering
 #define FB_COUNT 2
+
+// Camera
 #define FOV_DEG 85.0f
 #define CAMERA_NEAR 10.0f
 #define CAMERA_FAR 800.0f
+
+// Misc
+#define FONT_ID_DEBUG 1
+#define INPUT_BUFFER_SIZE 32
+#define JOY_DRIFT_THRESHOLD 30 
 
 /**
  * Converts the engine's float render matrix to Tiny3D's fixed-point matrix.
@@ -30,7 +39,7 @@ static void transform_to_t3d(T3DMat4FP *out, const mtx4f_t *in) {
     t3d_mat4_to_fixed(out, &m);
 }
 
-int main(void) {
+static inline void init_console(void) {
     INIT_DEBUG(); // Initialize debug logging
     
     init_trig_table(); // Initialize trig.h sine table
@@ -44,6 +53,56 @@ int main(void) {
     rdpq_init();
     joypad_init();
     t3d_init((T3DInitParams){});
+}
+
+static void get_pressed_input(char input_name[], size_t buffer_size) {
+    joypad_buttons_t pressed = joypad_get_buttons_pressed(JOYPAD_PORT_1);
+    joypad_buttons_t held = joypad_get_buttons_held(JOYPAD_PORT_1);
+    joypad_inputs_t inputs = joypad_get_inputs(JOYPAD_PORT_1);
+
+    bool new_input_detected = false;
+
+    if (pressed.a || held.a)            { snprintf(input_name, buffer_size, "Button: A"); new_input_detected = true; }
+    else if (pressed.b || held.b)       { snprintf(input_name, buffer_size, "Button: B"); new_input_detected = true; }
+    else if (pressed.z || held.z)       { snprintf(input_name, buffer_size, "Button: Z"); new_input_detected = true; }
+    else if (pressed.l || held.l)       { snprintf(input_name, buffer_size, "Button: L"); new_input_detected = true; }
+    else if (pressed.r || held.r)       { snprintf(input_name, buffer_size, "Button: R"); new_input_detected = true; }
+    else if (pressed.start || held.start)   { snprintf(input_name, buffer_size, "Button: START"); new_input_detected = true; }
+    else if (pressed.d_up || held.d_up)    { snprintf(input_name, buffer_size, "D-Pad: UP"); new_input_detected = true; }
+    else if (pressed.d_down || held.d_down)  { snprintf(input_name, buffer_size, "D-Pad: DOWN"); new_input_detected = true; }
+    else if (pressed.d_left || held.d_left)  { snprintf(input_name, buffer_size, "D-Pad: LEFT"); new_input_detected = true; }
+    else if (pressed.d_right || held.d_right) { snprintf(input_name, buffer_size, "D-Pad: RIGHT"); new_input_detected = true; }
+    else if (pressed.c_up || held.c_up)    { snprintf(input_name, buffer_size, "C-Button: UP"); new_input_detected = true; }
+    else if (pressed.c_down || held.c_down)  { snprintf(input_name, buffer_size, "C-Button: DOWN"); new_input_detected = true; }
+    else if (pressed.c_left || held.c_left)  { snprintf(input_name, buffer_size, "C-Button: LEFT"); new_input_detected = true; }
+    else if (pressed.c_right || held.c_right) { snprintf(input_name, buffer_size, "C-Button: RIGHT"); new_input_detected = true; }
+
+    // Check axis activity if no button is pressed
+    if (!new_input_detected)
+    {
+        if (abs(inputs.stick_x) > JOY_DRIFT_THRESHOLD)
+        {
+            snprintf(input_name, buffer_size, "Axis X: %d", inputs.stick_x);
+            new_input_detected = true;
+        }
+        else if (abs(inputs.stick_y) > JOY_DRIFT_THRESHOLD)
+        {
+            snprintf(input_name, buffer_size, "Axis Y: %d", inputs.stick_y);
+            new_input_detected = true;
+        }
+    }
+    
+    if (!new_input_detected) snprintf(input_name, buffer_size, "None");
+}
+
+int main(void) {
+    init_console();
+
+    rdpq_font_t *font = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_MONO);
+    rdpq_text_register_font(FONT_ID_DEBUG, font);
+
+    // Persistent allocated text to log inputs
+    char latest_input_name[INPUT_BUFFER_SIZE] = "None"; 
 
     // Allocate Z-buffer in memory
     surface_t depth = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
@@ -76,6 +135,7 @@ int main(void) {
 
     while (1) {
         joypad_poll();
+        get_pressed_input(latest_input_name, INPUT_BUFFER_SIZE);
 
         // Rebuild the engine's render matrix only when the transform actually changes
         if (cube_tr->is_dirty) {
@@ -107,6 +167,8 @@ int main(void) {
         uint8_t light_color[4] = {0xFF, 0xFF, 0xFF, 0xFF};
         T3DVec3 light_dir      = {{1.0f, 1.0f, 1.0f}};
         t3d_vec3_norm(&light_dir);
+
+        rdpq_text_print(NULL, FONT_ID_DEBUG, 10, display_get_height() - 10, latest_input_name);
 
         t3d_light_set_ambient(ambient);
         t3d_light_set_directional(0, light_color, &light_dir);
