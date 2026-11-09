@@ -5,6 +5,7 @@
 #include "bool.h"
 #include "debug.h"
 #include "trig.h"
+#include "inputs.h"
 
 // Rendering
 #define FB_COUNT 2
@@ -17,7 +18,6 @@
 // Misc
 #define FONT_ID_DEBUG 1
 #define INPUT_BUFFER_SIZE 32
-#define JOY_DRIFT_THRESHOLD 30 
 
 /**
  * Converts the engine's float render matrix to Tiny3D's fixed-point matrix.
@@ -55,44 +55,52 @@ static inline void init_console(void) {
     t3d_init((T3DInitParams){});
 }
 
-static void get_pressed_input(char input_name[], size_t buffer_size) {
-    joypad_buttons_t pressed = joypad_get_buttons_pressed(JOYPAD_PORT_1);
-    joypad_buttons_t held = joypad_get_buttons_held(JOYPAD_PORT_1);
-    joypad_inputs_t inputs = joypad_get_inputs(JOYPAD_PORT_1);
+// Helper function using a switch statement to retrieve the button's display name
+static const char* get_button_name(input_button_t btn) {
+    switch (btn) {
+        case IN_BTN_A:      return "Button: A";
+        case IN_BTN_B:      return "Button: B";
+        case IN_BTN_START:  return "Button: START";
+        case IN_BTN_L:      return "Button: L";
+        case IN_BTN_R:      return "Button: R";
+        case IN_BTN_Z:      return "Button: Z";
+        case IN_BTN_C_UP:   return "C-Button: UP";
+        case IN_BTN_C_DOWN: return "C-Button: DOWN";
+        case IN_BTN_C_LEFT: return "C-Button: LEFT";
+        case IN_BTN_C_RIGHT: return "C-Button: RIGHT";
+        default:            return "Unknown";
+    }
+}
 
-    bool new_input_detected = false;
+static void get_pressed_input(char input_name[], size_t buffer_size, joypad_port_t port) {
+    static const input_button_t all_buttons[] = {
+        IN_BTN_A, IN_BTN_B, IN_BTN_START, 
+        IN_BTN_L, IN_BTN_R, IN_BTN_Z,
+        IN_BTN_C_UP, IN_BTN_C_DOWN, 
+        IN_BTN_C_LEFT, IN_BTN_C_RIGHT
+    };
 
-    if (pressed.a || held.a)            { snprintf(input_name, buffer_size, "Button: A"); new_input_detected = true; }
-    else if (pressed.b || held.b)       { snprintf(input_name, buffer_size, "Button: B"); new_input_detected = true; }
-    else if (pressed.z || held.z)       { snprintf(input_name, buffer_size, "Button: Z"); new_input_detected = true; }
-    else if (pressed.l || held.l)       { snprintf(input_name, buffer_size, "Button: L"); new_input_detected = true; }
-    else if (pressed.r || held.r)       { snprintf(input_name, buffer_size, "Button: R"); new_input_detected = true; }
-    else if (pressed.start || held.start)   { snprintf(input_name, buffer_size, "Button: START"); new_input_detected = true; }
-    else if (pressed.d_up || held.d_up)    { snprintf(input_name, buffer_size, "D-Pad: UP"); new_input_detected = true; }
-    else if (pressed.d_down || held.d_down)  { snprintf(input_name, buffer_size, "D-Pad: DOWN"); new_input_detected = true; }
-    else if (pressed.d_left || held.d_left)  { snprintf(input_name, buffer_size, "D-Pad: LEFT"); new_input_detected = true; }
-    else if (pressed.d_right || held.d_right) { snprintf(input_name, buffer_size, "D-Pad: RIGHT"); new_input_detected = true; }
-    else if (pressed.c_up || held.c_up)    { snprintf(input_name, buffer_size, "C-Button: UP"); new_input_detected = true; }
-    else if (pressed.c_down || held.c_down)  { snprintf(input_name, buffer_size, "C-Button: DOWN"); new_input_detected = true; }
-    else if (pressed.c_left || held.c_left)  { snprintf(input_name, buffer_size, "C-Button: LEFT"); new_input_detected = true; }
-    else if (pressed.c_right || held.c_right) { snprintf(input_name, buffer_size, "C-Button: RIGHT"); new_input_detected = true; }
+    for (int i = 0; i < sizeof(all_buttons) / sizeof(all_buttons[0]); i++) {
+        input_button_t btn = all_buttons[i];
 
-    // Check axis activity if no button is pressed
-    if (!new_input_detected)
-    {
-        if (abs(inputs.stick_x) > JOY_DRIFT_THRESHOLD)
-        {
-            snprintf(input_name, buffer_size, "Axis X: %d", inputs.stick_x);
-            new_input_detected = true;
-        }
-        else if (abs(inputs.stick_y) > JOY_DRIFT_THRESHOLD)
-        {
-            snprintf(input_name, buffer_size, "Axis Y: %d", inputs.stick_y);
-            new_input_detected = true;
+        if (inputs_held(btn, port)) {
+            snprintf(input_name, buffer_size, "%s", get_button_name(btn));
+            return;
         }
     }
-    
-    if (!new_input_detected) snprintf(input_name, buffer_size, "None");
+
+    vec2f_t stick = inputs_read_joystick(port);
+
+    if (f32_abs(stick.x) > 0.01f || f32_abs(stick.y) > 0.01f) {
+        if (f32_abs(stick.x) >= f32_abs(stick.y)) {
+            snprintf(input_name, buffer_size, "Axis X: %.2f", stick.x);
+        } else {
+            snprintf(input_name, buffer_size, "Axis Y: %.2f", stick.y);
+        }
+        return;
+    }
+
+    snprintf(input_name, buffer_size, "None");
 }
 
 int main(void) {
@@ -135,7 +143,19 @@ int main(void) {
 
     while (1) {
         joypad_poll();
-        get_pressed_input(latest_input_name, INPUT_BUFFER_SIZE);
+        get_pressed_input(latest_input_name, INPUT_BUFFER_SIZE, JOYPAD_PORT_1);
+
+        // Rotate the cube in the direction of the stick
+        vec2f_t input_vector = inputs_read_joystick(JOYPAD_PORT_1);
+
+        // Invert the XY axis to reverse the rotation direction
+        vec2f_reverse(input_vector);
+
+        // Rotate the cube by the XY values of the joystick
+        vec3f_t angles = vec3f_add(cube_tr->rotation, vec2f_to_vec3f(input_vector));
+
+        // Apply the new angles to the transform
+        transform_set_rotation(cube_tr, angles);
 
         // Rebuild the engine's render matrix only when the transform actually changes
         if (cube_tr->is_dirty) {
