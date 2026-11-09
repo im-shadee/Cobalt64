@@ -2,17 +2,18 @@
 #include "trig.h"
 #include "custom_math.h"
 #include <assert.h>
+#include <stdlib.h>
 
 transform_t* transform_create(vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t shr) {
-    transform_t* tr = malloc(sizeof(transform_t)); // TODO: Change to libdragon mem allocation
+    transform_t* tr = malloc(sizeof(transform_t));
     if (!tr) return NULL;
 
-    tr->render_mtx = IDENTITY;
     tr->is_dirty = FALSE;
     tr->position = pos;
     tr->rotation = rot;
     tr->scale = scale;
     tr->shear = shr;
+    update_render_mtx(&tr->render_mtx, pos, rot, scale, shr); // Calculate the render matrix once when initialized
 
     return tr;
 }
@@ -81,7 +82,7 @@ void update_render_mtx(mtx4f_t* mtx, vec3f_t pos, vec3f_t rot, vec3f_t scale, ve
 }
 
 baked_transform_t* baked_tr_create(vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t shr) {
-    baked_transform_t* tr = malloc(sizeof(baked_transform_t)); // TODO: Change to libdragon mem allocation
+    baked_transform_t* tr = malloc(sizeof(baked_transform_t));
     if (!tr) return NULL;
 
     update_render_mtx(&tr->render_mtx, pos, rot, scale, shr); // Calculate the render matrix once when initialized

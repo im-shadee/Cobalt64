@@ -1,5 +1,6 @@
 #include "matrices.h"
 #include <assert.h>
+#include <stdlib.h>
 
 const mtx4f_t IDENTITY = {
     1.0f, 0.0f, 0.0f, 0.0f,

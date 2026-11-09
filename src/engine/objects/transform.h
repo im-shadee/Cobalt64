@@ -24,7 +24,8 @@ typedef struct {
 
 /** 
  * Initializes a transform with a specified position, rotation, scale and shearing.
- * returns: A pointer to the created transform or NULL in case of errors.  
+ * returns: A pointer to the created transform or NULL in case of errors.
+ * remarks: The render matrix is automatically updated when created.
  */
 transform_t* transform_create(vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t shr);
 

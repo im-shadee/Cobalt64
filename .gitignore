@@ -57,6 +57,7 @@ dkms.conf
 
 # libdragon build output
 [bB]uild/
+[bB]uild_debug/
 [fF]ilesystem/
 *.map
 *.z64
