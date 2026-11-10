@@ -73,9 +73,12 @@ debug:
 clean:
 	rm -rf $(BUILD_DIR) $(BUILD_DIR)_debug filesystem $(ROM_NAME).z64 $(ROM_NAME)_debug.z64
 
+run_debug: $(ROM_NAME)_debug.z64
+	ares $(ROM_NAME)_debug.z64
+
 run: $(ROM_NAME).z64
 	ares $(ROM_NAME).z64
 
 -include $(DEPS)
 
-.PHONY: all clean run
+.PHONY: all clean run run_debug
