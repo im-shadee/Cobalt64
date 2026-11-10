@@ -13,7 +13,7 @@
 // Camera
 #define FOV_DEG 85.0f
 #define CAMERA_NEAR 10.0f
-#define CAMERA_FAR 800.0f
+#define CAMERA_FAR 1000.0f
 
 // Misc
 #define FONT_ID_DEBUG 1
@@ -27,13 +27,11 @@
  */
 static void transform_to_t3d(T3DMat4FP *out, const mtx4f_t *in) {
     T3DMat4 m;
-    // Map axes: swap X (0) and Y (1), leave Z (2) and W (3) unchanged
-    const int map[4] = {1, 0, 2, 3};
-
+    
     #pragma GCC unroll 4
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            m.m[j][i] = in->m[map[i]][map[j]];
+    for (int r = 0; r < 4; r++) {
+        for (int c = 0; c < 4; c++) {
+            m.m[c][r] = in->m[r][c];
         }
     }
     t3d_mat4_to_fixed(out, &m);
@@ -94,7 +92,8 @@ static void get_pressed_input(char input_name[], size_t buffer_size, joypad_port
     if (f32_abs(stick.x) > 0.01f || f32_abs(stick.y) > 0.01f) {
         if (f32_abs(stick.x) >= f32_abs(stick.y)) {
             snprintf(input_name, buffer_size, "Axis X: %.2f", stick.x);
-        } else {
+        } 
+        else {
             snprintf(input_name, buffer_size, "Axis Y: %.2f", stick.y);
         }
         return;
@@ -145,17 +144,49 @@ int main(void) {
         joypad_poll();
         get_pressed_input(latest_input_name, INPUT_BUFFER_SIZE, JOYPAD_PORT_1);
 
-        // Rotate the cube in the direction of the stick
-        vec2f_t input_vector = inputs_read_joystick(JOYPAD_PORT_1);
+        vec2f_t input_vec = inputs_read_joystick(JOYPAD_PORT_1);
 
-        // Invert the XY axis to reverse the rotation direction
-        vec2f_reverse(input_vector);
+        if (input_vec.x != 0.0f || input_vec.y != 0.0f) {
+            if (inputs_held(IN_BTN_Z, JOYPAD_PORT_1)) {
+                // Stick X spins around the vertical (Y) axis, stick Y tilts around the horizontal (X) axis.
+                vec3f_t angles = cube_tr->rotation;
+                angles.y += input_vec.x * 2;
+                angles.x -= input_vec.y * 2;
+                transform_set_rotation(cube_tr, angles);
+            } 
+            else {
+                // Default: translate in the screen plane.
+                // Stick X moves right/left (X), stick Y moves up/down (Y). Z (depth) is left alone.
+                vec3f_t move = {
+                    .x = input_vec.x * 2,
+                    .y = 0.0f,
+                    .z = input_vec.y * 2
+                };
+                transform_set_position(cube_tr, vec3f_add(cube_tr->position, move));
+            }
+        }
 
-        // Rotate the cube by the XY values of the joystick
-        vec3f_t angles = vec3f_add(cube_tr->rotation, vec2f_to_vec3f(input_vector));
+        // Camera movement
+        // C buttons move it in the X/Y plane, holding B/A turns C-up/C-down into Z movement
+        float cam_dx = 0.0f, cam_dy = 0.0f, cam_dz = 0.0f;
+ 
+        if (inputs_held(IN_BTN_B, JOYPAD_PORT_1)) cam_dy -= 2;
+        else if (inputs_held(IN_BTN_A, JOYPAD_PORT_1)) cam_dy += 2;
 
-        // Apply the new angles to the transform
-        transform_set_rotation(cube_tr, angles);
+        if (inputs_held(IN_BTN_C_RIGHT, JOYPAD_PORT_1)) cam_dx += 2;
+        else if (inputs_held(IN_BTN_C_LEFT, JOYPAD_PORT_1)) cam_dx -= 2;
+        else if (inputs_held(IN_BTN_C_UP, JOYPAD_PORT_1)) cam_dz += 2;
+        else if (inputs_held(IN_BTN_C_DOWN, JOYPAD_PORT_1)) cam_dz -= 2;
+ 
+        cam_pos.v[0] += cam_dx;
+        cam_pos.v[1] += cam_dy;
+        cam_pos.v[2] += cam_dz;
+ 
+        // The target moves with the camera, so it keeps looking along -Z
+        cam_target.v[0] = cam_pos.v[0];
+        cam_target.v[1] = cam_pos.v[1];
+        cam_target.v[2] = cam_pos.v[2] - 1.0f;
+
 
         // Rebuild the engine's render matrix only when the transform actually changes
         if (cube_tr->is_dirty) {
