@@ -15,7 +15,7 @@ typedef struct {
     uint8_t is_dirty; // TODO: Move to per-scene bitset
     vec3f_t position, rotation, scale, shear;
     mtx4f_t render_mtx;
-} transform_t; // 121 bytes (120 after moving the flag)
+} transform_t; // 116 bytes
 
 /** Data structure holding the rendering matrix of a static object, calculated at initialization. */
 typedef struct {

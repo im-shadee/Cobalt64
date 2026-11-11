@@ -38,12 +38,6 @@ static inline void mat4f_scale(mtx4f_t* mtx, const float k) {
 /** Sets each of a matrix slots to 0. */
 static inline void mat4f_clear(mtx4f_t* mtx) { assert(mtx); memset(mtx, 0, sizeof(*mtx)); }
 
-/** 
- * Creates a 4x4 matrix and initializes its contents.
- * Returns a pointer to the created matrix, or NULL if any allocation failed.
- */
-mtx4f_t* mat4f_create(void);
-
 /** Multiplies a matrix with another and puts the result into a destination matrix. */
 void mat4f_multiply(mtx4f_t* dest, const mtx4f_t* a, const mtx4f_t* b);
 

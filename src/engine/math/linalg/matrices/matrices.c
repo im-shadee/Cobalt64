@@ -1,6 +1,5 @@
 #include "matrices.h"
 #include <assert.h>
-#include <stdlib.h>
 
 const mtx4f_t IDENTITY = {
     1.0f, 0.0f, 0.0f, 0.0f,
@@ -8,15 +7,6 @@ const mtx4f_t IDENTITY = {
     0.0f, 0.0f, 1.0f, 0.0f,
     0.0f, 0.0f, 0.0f, 1.0f
 };
-
-// Function implementation
-mtx4f_t* mat4f_create(void) {
-    mtx4f_t* mtx = malloc(sizeof(*mtx)); // Allocate space for matrix struct
-    if (!mtx) return NULL;
-
-    mat4f_clear(mtx); // Initialize all slots to 0
-    return mtx;
-}
 
 void mat4f_multiply(mtx4f_t* dest, const mtx4f_t* a, const mtx4f_t* b) {
     assert(dest && a && b);
