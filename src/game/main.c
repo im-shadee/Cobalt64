@@ -134,7 +134,7 @@ int main(void) {
     vec3f_t scale = { .x = 1.0f, .y = 1.0f, .z = 1.0f };
     vec3f_t shear = { .x = 0.0f, .y = 0.0f, .z = 0.0f };
 
-    transform_t *cube_tr = transform_create(pos, rot, scale, shear);
+    transform_t *cube_tr = transform_create(pos, rot, scale, shear, (transform_hierarchy_t){0,0,0});
     if (!cube_tr) return -1;
 
     // Tracks the buffer to draw the image on this rendering pass

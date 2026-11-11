@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-transform_t* transform_create(vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t shr) {
+transform_t* transform_create(vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t shr, transform_hierarchy_t hierarchy) {
     transform_t* tr = malloc(sizeof(transform_t));
     if (!tr) return NULL;
 
@@ -13,8 +13,9 @@ transform_t* transform_create(vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t s
     tr->rotation = rot;
     tr->scale = scale;
     tr->shear = shr;
-    update_render_mtx(&tr->render_mtx, pos, rot, scale, shr); // Calculate the render matrix once when initialized
+    tr->hierarchy = hierarchy;
 
+    update_render_mtx(&tr->render_mtx, pos, rot, scale, shr); // Calculate the render matrix once when initialized
     return tr;
 }
 
@@ -81,10 +82,11 @@ void update_render_mtx(mtx4f_t* mtx, vec3f_t pos, vec3f_t rot, vec3f_t scale, ve
     mtx->m[3][3] = 1.0f;
 }
 
-baked_transform_t* baked_tr_create(vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t shr) {
+baked_transform_t* baked_tr_create(vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t shr, transform_hierarchy_t hierarchy) {
     baked_transform_t* tr = malloc(sizeof(baked_transform_t));
     if (!tr) return NULL;
 
+    tr->hierarchy = hierarchy;
     update_render_mtx(&tr->render_mtx, pos, rot, scale, shr); // Calculate the render matrix once when initialized
     return tr;
 }
