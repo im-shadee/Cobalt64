@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "layers.h"
+#include "component.h"
 
 // Packed ensures the enum only takes up 1 byte in memory
 typedef enum __attribute__((packed)) {
@@ -21,9 +22,7 @@ typedef struct {
             uint8_t active : 1; // 0x01: Whether this object is active (participating in the game loop)
             uint8_t visible : 1; // 0x02: Whether this object is visible (rendered by the graphics pipeline)
             uint8_t destroy : 1; // 0x04: Whether this object is pending destruction
-            uint8_t has_mesh : 1;
-            uint8_t has_collider : 1;
-            uint8_t unused : 3;
+            uint8_t unused : 5;
         };
     } flags; // 1 byte
 
