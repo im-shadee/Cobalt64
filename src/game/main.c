@@ -6,9 +6,7 @@
 #include "debug.h"
 #include "trig.h"
 #include "inputs.h"
-
-// Rendering
-#define FB_COUNT 2
+#include "config.h"
 
 // Camera
 #define FOV_DEG 85.0f
@@ -46,7 +44,7 @@ static inline void init_console(void) {
     // Initialize display with default N64 resolution, two framebuffers, no gamma correction, 
     // and resampling when scaling
     // Using two framebuffers consume ~307 KB of memory
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, FB_COUNT, GAMMA_NONE, FILTERS_RESAMPLE);
+    display_init(RESOLUTION_320x240, DEPTH_16_BPP, FRAMEBUFFER_COUNT, GAMMA_NONE, FILTERS_RESAMPLE);
 
     rdpq_init();
     joypad_init();
@@ -121,7 +119,7 @@ int main(void) {
     T3DVec3 cam_up     = {{0, 1, 0}}; // Define the Y axis as the "up" vector
 
     // One matrix per framebuffer, so we never overwrite one the RDP is still reading
-    T3DMat4FP *mtx = malloc_uncached(sizeof(T3DMat4FP) * FB_COUNT);
+    T3DMat4FP *mtx = malloc_uncached(sizeof(T3DMat4FP) * FRAMEBUFFER_COUNT);
 
     // Load the cube model and ensure it is not corrupted
     // Call model_free once not in use anymore
@@ -230,7 +228,7 @@ int main(void) {
         t3d_matrix_pop(1);
 
         rdpq_detach_show();
-        framebuffer_index = (framebuffer_index + 1) % FB_COUNT; // Draws on the next framebuffer next frame
+        framebuffer_index = (framebuffer_index + 1) % FRAMEBUFFER_COUNT; // Draws on the next framebuffer next frame
     }
 
     free(cube_tr);

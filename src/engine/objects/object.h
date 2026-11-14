@@ -35,7 +35,7 @@ typedef struct {
  * Initializes an object in the object pool with a transform, set flags, a layer and a tag.
  * @return The index of that object in the object pool.
  */
-uint16_t obj_init(uint16_t transform_index, uint8_t flags, render_layer_t layer, object_tags_t tag);
+uint16_t obj_init(uint8_t flags, render_layer_t layer, object_tags_t tag);
 
 /** 
  * Sets an object from the object pool as destroyed. Its index in the pool becomes invalid.
@@ -54,5 +54,11 @@ static inline int obj_is_active(object_t* o) { return o->flags.active; }
  * @return 1 if visible, 0 otherwise.
  */
 static inline int obj_is_visible(object_t* o) { return o->flags.visible; }
+
+/** 
+ * Checks whether the object is pending destruction.
+ * @return 1 if destroyed, 0 otherwise.
+ */
+static inline int obj_is_destroyed(object_t* o) { return o->flags.destroy; }
 
 #endif // OBJ_H
