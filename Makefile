@@ -22,7 +22,7 @@ else
 N64_CFLAGS += -O2
 endif
 
-# Source files every .c under src/
+# Source files: every .c under src/
 SRC_FILES := $(shell find $(SRC_DIR) -name '*.c')
 OBJS      := $(SRC_FILES:%.c=$(BUILD_DIR)/%.o)
 DEPS      := $(OBJS:.o=.d)
@@ -31,11 +31,11 @@ INC_DIRS := $(sort $(dir $(shell find $(SRC_DIR) -name '*.h')))
 N64_CFLAGS += $(addprefix -I,$(INC_DIRS))
 N64_CFLAGS += -Wno-missing-braces
 
-# Assets: anything in assets/ gets packed into the ROM
+# Assets
 ASSETS_DIR := src/game/assets
 ASSETS_PNG := $(wildcard $(ASSETS_DIR)/*.png)
-ASSETS_GLB := $(wildcard $(ASSETS_DIR)/*.glb)
-ASSETS_WAV := $(wildcard $(ASSETS_DIR)/*.wav)
+ASSETS_GLB := $(wildcard $(ASSETS_DIR)/models/*.glb)
+ASSETS_WAV := $(wildcard $(ASSETS_DIR)/audio/*.wav)
 
 ASSETS_CONV := $(ASSETS_PNG:$(ASSETS_DIR)/%.png=filesystem/%.sprite) \
                $(ASSETS_GLB:$(ASSETS_DIR)/%.glb=filesystem/%.t3dm) \
@@ -44,12 +44,12 @@ ASSETS_CONV := $(ASSETS_PNG:$(ASSETS_DIR)/%.png=filesystem/%.sprite) \
 filesystem/%.sprite: $(ASSETS_DIR)/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	$(N64_MKSPRITE) $(MKSPRITE_FLAGS) -o filesystem "$<"
+	$(N64_MKSPRITE) $(MKSPRITE_FLAGS) -o $(dir $@) "$<"
 
 filesystem/%.t3dm: $(ASSETS_DIR)/%.glb
 	@mkdir -p $(dir $@)
 	@echo "    [T3D-MODEL] $@"
-	$(T3D_GLTF_TO_3D) "$<" $@
+	$(T3D_GLTF_TO_3D) "$<" $@ --asset-path=$(ASSETS_DIR) --verbose
 	$(N64_BINDIR)/mkasset -c 1 -o $(dir $@) $@
 
 filesystem/%.wav64: $(ASSETS_DIR)/%.wav
@@ -59,12 +59,13 @@ filesystem/%.wav64: $(ASSETS_DIR)/%.wav
 
 # Targets
 all: $(ROM_NAME).z64
+	@python3 tools/n64crc.py $(ROM_NAME).z64
 
 $(BUILD_DIR)/$(ROM_NAME).dfs: $(ASSETS_CONV)
 $(BUILD_DIR)/$(ROM_NAME).elf: $(OBJS)
 
 $(ROM_NAME).z64: N64_ROM_TITLE = "CEngine"
-$(ROM_NAME).z64: $(BUILD_DIR)/$(ROM_NAME).dfs
+$(ROM_NAME).z64: $(BUILD_DIR)/$(ROM_NAME).elf $(BUILD_DIR)/$(ROM_NAME).dfs
 
 # Target for debug builds
 debug:
@@ -81,4 +82,4 @@ run: $(ROM_NAME).z64
 
 -include $(DEPS)
 
-.PHONY: all clean run run_debug
+.PHONY: all clean run run_debug debug

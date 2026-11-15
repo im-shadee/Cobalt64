@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2026 Shadee
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 #ifndef SCENES_H
 #define SCENES_H
 
@@ -6,17 +10,20 @@
 
 #define POOL_TR_PADDING 50
 
-#include <stdint.h>
 #include "transform.h"
-#include "transform_pool.h"
+#include "config.h"
+#include "object.h"
 #include <stdio.h>
+#include <stdint.h>
 
 typedef struct {
-    transform_pool_t transform_pool;
-} scene_t;
+    
+} Scene;
 
-void scene_update(scene_t* scene);
+void scene_update(Scene* scene);
 
 void scene_load_scene(uint16_t index);
+
+//Object* scene_get_object(uint16_t index);
 
 #endif // SCENES_H

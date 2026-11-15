@@ -18,7 +18,9 @@ typedef struct {
     uint16_t capacity;
     void (*awake)(void* comps, const uint16_t* owners, uint16_t count);
     void (*update)(void* comps, const uint16_t* owners, uint16_t count, float dt);
-} comp_desc_t;
+    void (*on_add)(void* comps, const uint16_t* owners, uint16_t count);
+    void (*on_remove)(void* comps, const uint16_t* owners, uint16_t count);
+} comp_desc_t; // 20 bytes
 
 /**
  * Registers a component type. Fills obj_to_dense with COMP_NONE.

@@ -17,8 +17,8 @@
 
 #pragma region Game Pools
 
-#define MAX_COMPONENT_TYPES 255
-#define MAX_OBJECTS 512
+#define MAX_COMPONENT_TYPES 255 /** Constant */
+#define MAX_OBJECTS 255
 
 #pragma endregion
 

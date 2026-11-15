@@ -18,7 +18,7 @@ typedef struct {
     uint16_t* component_to_obj;
     uint16_t* obj_to_component;
     uint16_t count;
-} ComponentPool; // 28 bytes
+} ComponentPool; // 36 bytes
 
 static ComponentPool pools[MAX_COMPONENT_TYPES];
 static comp_type_t registered_types = 0;
