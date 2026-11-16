@@ -41,7 +41,7 @@ int main(void) {
     assert(model);
 
     // Initialize an array of 10 transforms arranged in a row/depth layout
-    transform_t *cubes[NUM_MODELS];
+    Transform *cubes[NUM_MODELS];
     for (int i = 0; i < NUM_MODELS; i++) {
         vec3f_t pos = { 
             .x = (i - (NUM_MODELS / 2.0f)) * 200.0f, 

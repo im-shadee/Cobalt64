@@ -1,7 +1,9 @@
 #ifndef BOOL_H
 #define BOOL_H
 
-#define TRUE 1
-#define FALSE 0
+typedef enum __attribute__((packed)) {
+    FALSE = 0,
+    TRUE = 1
+} bool_t;
 
 #endif // BOOL_H

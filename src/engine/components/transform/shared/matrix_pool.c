@@ -2,34 +2,67 @@
  * Copyright (c) 2026 Shadee
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include "transform.h"
-#include "trig.h"
-#include "custom_math.h"
 #include "matrix_pool.h"
-#include <assert.h>
-#include <stdlib.h>
+#include "trig.h"
 #include <t3d/t3d.h>
 #include <libdragon.h>
+#include <stdint.h>
+#include <assert.h>
 
-transform_t* transform_create(vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t shr, transform_hierarchy_t hierarchy) {
-    transform_t* tr = malloc(sizeof(transform_t));
-    if (!tr) return NULL;
+static T3DMat4FP* matrix_pool;
+static uint16_t next_free[MAX_TRANSFORMS];
 
-    tr->render_mtx_index = matrix_pool_alloc();
-    tr->is_dirty = FALSE;
-    tr->position = pos;
-    tr->rotation = rot;
-    tr->scale = scale;
-    tr->shear = shr;
-    tr->hierarchy = hierarchy;
+static uint16_t free_head;
+static uint16_t next_unused = 0;
 
-    update_render_mtx(transform_get_matrix(tr->render_mtx_index), pos, rot, scale, shr); // Calculate the render matrix once when initialized
-    return tr;
+void matrix_pool_init(void) {
+    matrix_pool = malloc_uncached(sizeof(T3DMat4FP) * MAX_TRANSFORMS);
+    assert(matrix_pool);
+
+    free_head = MTX_NONE;
+    next_unused = 0;
 }
 
-void update_render_mtx(T3DMat4FP* mtx, vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t shr) {
-    assert(mtx); // Crash if the passed matrix is null
+void matrix_pool_free_pool(void) { 
+    free_uncached(matrix_pool);
+    matrix_pool = NULL;
+}
 
+uint16_t matrix_pool_alloc(void) {
+    uint16_t taken;
+
+    // Grab the next free slot
+    if (free_head != MTX_NONE) {
+        taken = free_head;
+        free_head = next_free[taken];
+        return taken;
+    }
+
+    if (next_unused < MAX_TRANSFORMS) {
+        taken = next_unused;
+        next_unused++;
+        return taken;
+    }
+
+    // We can't run out of matrices ever (1:1 transform/matrix), so if this happens, crash
+    assert(0);
+    return MTX_NONE;
+}
+
+void matrix_pool_free(uint16_t index) {
+    // A slot that was never handed out can't be returned; verify that index is valid
+    assert(index < next_unused);
+
+    next_free[index] = free_head;
+    free_head = index;
+}
+
+T3DMat4FP* matrix_pool_get(uint16_t index) {
+    assert(index < next_unused);
+    return &matrix_pool[index];
+}
+
+void matrix_pool_update_mtx(uint16_t mtx_idx, vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t shr) {
     // Convert float degrees to 16-bit BAMs
     uint16_t x_bam = (uint16_t)(int32_t)(rot.x * DEG_TO_BAM);
     uint16_t y_bam = (uint16_t)(int32_t)(rot.y * DEG_TO_BAM);
@@ -84,15 +117,5 @@ void update_render_mtx(T3DMat4FP* mtx, vec3f_t pos, vec3f_t rot, vec3f_t scale, 
             m.m[c][r] = a[r][c];
 
     // Convert standard float matrix to Tiny3D's hardware fixed-point format
-    t3d_mat4_to_fixed(mtx, &m);
-}
-
-baked_transform_t* baked_tr_create(vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t shr, transform_hierarchy_t hierarchy) {
-    baked_transform_t* tr = malloc(sizeof(baked_transform_t));
-    if (!tr) return NULL;
-
-    tr->render_mtx_index = matrix_pool_alloc();
-    tr->hierarchy = hierarchy;
-    update_render_mtx(transform_get_matrix(tr->render_mtx_index), pos, rot, scale, shr); // Calculate the render matrix once when initialized
-    return tr;
+    t3d_mat4_to_fixed(&matrix_pool[mtx_idx], &m);
 }

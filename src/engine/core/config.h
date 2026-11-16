@@ -7,7 +7,12 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#pragma region Global Settings
+
 #define DEFAULT_SCENE_INDEX 0
+#define TARGET_FPS 60
+
+#pragma endregion
 
 #pragma region Rendering
 
