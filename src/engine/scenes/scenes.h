@@ -8,8 +8,6 @@
 #define NULL_IDX_16 0xFFFF
 #define NULL_IDX_8 0xFF
 
-#define POOL_TR_PADDING 50
-
 #include "transform.h"
 #include "config.h"
 #include "object.h"

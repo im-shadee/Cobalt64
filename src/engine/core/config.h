@@ -7,7 +7,16 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#pragma region Global Settings
+
 #define DEFAULT_SCENE_INDEX 0
+#define TARGET_FPS 60
+
+#define TOTAL_MEM_BUDGET 80000
+#define SCENE_DATA_MEM 64000
+#define GLOBAL_DATA_MEM 16000 
+
+#pragma endregion
 
 #pragma region Rendering
 
@@ -17,7 +26,7 @@
 
 #pragma region Game Pools
 
-#define MAX_COMPONENT_TYPES 255 /** Constant */
+#define MAX_COMPONENT_TYPES 255
 #define MAX_OBJECTS 255
 
 #pragma endregion

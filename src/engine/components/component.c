@@ -85,8 +85,17 @@ void* comp_add(uint16_t obj_idx, comp_type_t type) {
 
     void* component_address = compute_component_address(comp_pool_count, pool);
     memset(component_address, 0, pool->component_description.type_size);
-
     pool->count++;
+
+    if (pool->component_description.on_add) {
+        pool->component_description.on_add(obj_idx, component_address);
+    }
+
+    if (pool->component_description.start) {
+        // Run the start function after the object's own on_add, for this specific object
+        pool->component_description.start(component_address, &obj_idx);
+    }
+
     return component_address;
 }
 
@@ -105,6 +114,10 @@ void comp_remove(uint16_t obj_idx, comp_type_t type) {
     void* remove_addr = compute_component_address(component_slot, pool);
     void* last_used_comp_addr = compute_component_address(last_used_slot, pool);
 
+    if (pool->component_description.on_remove) {
+        pool->component_description.on_remove(obj_idx, remove_addr);
+    }
+
     if (component_slot != last_used_slot) {
         // Copy the last component's bytes over the removed one
         memcpy(remove_addr, last_used_comp_addr, pool->component_description.type_size);
@@ -117,4 +130,19 @@ void comp_remove(uint16_t obj_idx, comp_type_t type) {
 
     pool->obj_to_component[obj_idx] = COMP_NONE;
     pool->count--;
+}
+
+void comp_destroy(uint16_t obj_idx, comp_type_t type) {
+    assert(obj_idx < MAX_OBJECTS);
+    assert(type < registered_types);
+
+    // Find the slot to tag for destruction
+    ComponentPool* pool = &pools[type];
+    uint16_t component_slot = pool->obj_to_component[obj_idx];
+
+    // Ignore if the component doesn't exist on the object
+    if (component_slot == COMP_NONE) return;
+
+    comp_desc_t* desc = &pool->component_description;
+    desc->destroy = TRUE;
 }
