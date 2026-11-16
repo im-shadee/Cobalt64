@@ -1,7 +1,10 @@
-/** GENERATED FILE. DO NOT MODIFY. */
-
 /**
  * Copyright (c) 2026 Shadee
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include "components_init.h"
+#include "startup.h"
+
+int main(void) {
+    engine_init();
+    engine_run();
+}

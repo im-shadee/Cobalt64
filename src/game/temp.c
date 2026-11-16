@@ -2,6 +2,7 @@
  * Copyright (c) 2026 Shadee
  * SPDX-License-Identifier: BSD-3-Clause
  */
+/*
 #include <libdragon.h>
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
@@ -24,7 +25,6 @@
 int main(void) {
     // Initialize engine and debug (debug builds only) components 
     engine_init();
-    DBG_OVERLAY_INIT();
 
     // Allocate Z-buffer in memory
     surface_t depth = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
@@ -41,7 +41,7 @@ int main(void) {
     assert(model);
 
     // Initialize an array of 10 transforms arranged in a row/depth layout
-    transform_t *cubes[NUM_MODELS];
+    Transform *cubes[NUM_MODELS];
     for (int i = 0; i < NUM_MODELS; i++) {
         vec3f_t pos = { 
             .x = (i - (NUM_MODELS / 2.0f)) * 200.0f, 
@@ -58,7 +58,7 @@ int main(void) {
 
     while (1) {
         joypad_poll();
-        DBG_UPDATE(JOYPAD_PORT_1);
+        
         rspq_wait();
 
         // Update rotations dynamically every frame
@@ -119,7 +119,7 @@ int main(void) {
         t3d_light_set_count(1);
 
         rdpq_mode_push();
-        rdpq_mode_dithering(DITHER_NONE_NONE);
+        
 
         for (int i = 0; i < NUM_MODELS; i++) {
             t3d_matrix_push(transform_get_matrix(cubes[i]->render_mtx_index)); 
@@ -146,3 +146,4 @@ int main(void) {
 
     return 0;
 }
+*/

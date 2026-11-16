@@ -2,58 +2,121 @@
  * Copyright (c) 2026 Shadee
  * SPDX-License-Identifier: BSD-3-Clause
  */
+
+/*
+ * Scene file layout:
+ * Scene count
+ * Index entries ([ID | Byte offset] per line)
+ * Scene_i data blob 
+ *
+ * We load the scene using an index (the "ID" part of the index entries)
+ * Then we grab the data blob for this scene and parse it into the memory arena.
+ */
+#include "config.h"
+#include "memory.h"
+#include "object.h"
 #include "scenes.h"
 #include "transform.h"
-#include "config.h"
-#include "object.h"
-#include <stdlib.h>
 #include <stdint.h>
-#include <assert.h>
+#include <bool.h>
 #include <stdio.h>
-#include <stddef.h>
+#include <t3d/t3dmodel.h>
 
-Object object_list[MAX_OBJECTS];
+/** Maps a scene index to its data location in the scenes file. */
+typedef struct {
+    uint16_t scene_id;
+    uint32_t file_offset; // Exact byte offset where the scene data begins
+} SceneIndexEntry; // 8 bytes
 
-/**
- * Deserializes scene data from a scene file. Initializes scene pools and fill them with objects in the file.
- * @return A pointer to the created scene structure, or NULL in case of failure.
- */
-Scene* deserialize_scene_data(FILE* file);
+typedef struct {
+    uint16_t count;
+    SceneIndexEntry entries[];
+} SceneFileContainerHeader; // 4 bytes
 
-/** 
- * Retrieves the file name associated to the index and tries reading the file.
- * @return A pointer to the opened file, or NULL in case of errors
- * 
- * remarks: Make sure to close the file once the scene data has been serialized into a scene structure.
- */
-FILE* get_scene_file_from_index(uint16_t index);
+SceneIndexEntry* scene_index_table = NULL;
+uint16_t scene_count = 0;
 
-Scene* init_scene(uint16_t index);
+Transform* scene_transforms = NULL;
+Object* scene_objs = NULL;
+SceneFileHeader scene_header;
+T3DModel* scene_models = NULL;
+T3DMat4FP* scene_matrices = NULL;
+StaticBatch* scene_sbatches = NULL;
+DynamicBatch* scene_dbatches = NULL;
 
-// Scene functions
-void scene_load_scene(uint16_t index) {
-    // Initialize the scene
-    //scene_t* scene = init_scene(index);
+bool_t try_parse_scene_data(FILE* container) {
+    // Read the scene_header from the current position
+    if (fread(&scene_header, sizeof(SceneFileHeader), 1, container) != 1) {
+        return FALSE; // Failed to read scene scene_header
+    }
 
-    // TODO: Unload the previous scene
-    // TODO: Run the 'start' loop for all objects
-    // TODO: Setup the update loop
+    // Reserve memory for each core component (TODO: complete with types)
+    scene_objs = (Object*)engine_mem_scene_alloc(scene_header.object_count * sizeof(Object));
+    scene_transforms = (Transform*)engine_mem_scene_alloc(scene_header.transform_count * sizeof(Transform));
+
+    if (!scene_objs || !scene_transforms) {
+        return FALSE; // Out of scene memory
+    }
+
+    // Stream raw component data straight from disk/ROM into the arena buffers
+    if (scene_header.transform_count > 0) {
+        fread(scene_transforms, sizeof(Transform), scene_header.transform_count, container);
+    }
+    if (scene_header.object_count > 0) {
+        fread(scene_objs, sizeof(Object), scene_header.object_count, container);
+    }
+
+    return TRUE;
 }
 
-Scene* init_scene(uint16_t index) {
-    // TODO: Read and initialize
-    FILE* scene_file = get_scene_file_from_index(index);
-    assert(scene_file);
-    
-    // Creates a scene struct from scene file data
-    // Initializes the scene pools and fill them with the objects placed in the file
-    Scene* scene = deserialize_scene_data(scene_file);
-    assert(scene);
-
-    return scene;
+void scene_free_models(void) {
+    for (int i = 0; i < scene_header.model_count; i++) {
+        t3d_model_free(&scene_models[i]);
+    }
 }
-/*
-Object* scene_get_object(uint16_t index) {
-    return NULL;
-}*/
 
+bool_t scene_init(void) {
+    // Open the scenes file from ROM
+    FILE* file = fopen(SCENE_DATA_PATH, "rb");
+    if (!file) return FALSE;
+
+    // Read the total number of scenes from the scene_header
+    if (fread(&scene_count, sizeof(uint16_t), 1, file) != 1) {
+        fclose(file);
+        return FALSE;
+    }
+
+    // Reserve memory in the global pool for the table
+    uint32_t table_sz = scene_count * sizeof(SceneIndexEntry);
+    scene_index_table = (SceneIndexEntry*)engine_mem_global_alloc(table_sz);
+
+    if (!scene_index_table) {
+        fclose(file);
+        return FALSE; // Out of memory
+    }
+
+    // Stream the index into persistent RAM
+    if (fread(scene_index_table, sizeof(SceneIndexEntry), scene_count, file) != scene_count) {
+        fclose(file);
+        return FALSE;
+    }
+
+    fclose(file);
+    return TRUE;
+}
+
+bool_t scene_try_load(const uint16_t index) {
+    if (index >= scene_count) return FALSE;
+    scene_free_models(); // Free all models before resetting the memory arena
+    engine_mem_reset_scene(); // Unload the previous scene actors
+
+    FILE* file = fopen(SCENE_DATA_PATH, "rb");
+    if (!file) return FALSE;
+
+    // Direct lookup from persistent RAM table
+    uint32_t target_offset = scene_index_table[index].file_offset;
+
+    // Go straight to the scene data block in the file
+    fseek(file, target_offset, SEEK_SET);
+    return try_parse_scene_data(file);
+}

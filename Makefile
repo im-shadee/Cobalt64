@@ -61,11 +61,15 @@ filesystem/%.wav64: $(ASSETS_DIR)/%.wav
 all: $(ROM_NAME).z64
 	@python3 tools/n64crc.py $(ROM_NAME).z64
 
-$(BUILD_DIR)/$(ROM_NAME).dfs: $(ASSETS_CONV)
+# '| filesystem' to ensure the filesystem directory exists before mkdfs runs
+$(BUILD_DIR)/$(ROM_NAME).dfs: $(ASSETS_CONV) | filesystem
 $(BUILD_DIR)/$(ROM_NAME).elf: $(OBJS)
 
 $(ROM_NAME).z64: N64_ROM_TITLE = "CEngine"
 $(ROM_NAME).z64: $(BUILD_DIR)/$(ROM_NAME).elf $(BUILD_DIR)/$(ROM_NAME).dfs
+
+filesystem:
+	@mkdir -p filesystem
 
 # Target for debug builds
 debug:
