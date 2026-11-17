@@ -11,11 +11,12 @@
 #include "inputs.h"
 #include "components_init.h"
 #include "scenes.h"
+#include <assert.h>
 #include <libdragon.h>
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
 
-static inline void libdragon_setup() {
+static inline void libdragon_setup(void) {
     INIT_DEBUG(); // Initialize debug logging
     
     init_trig_table(); // Initialize trig.h sine table
@@ -31,18 +32,20 @@ static inline void libdragon_setup() {
     t3d_init((T3DInitParams){});
 }
 
-static inline void engine_init() {
-    // Engine startup
-    libdragon_setup();
+static inline void engine_init(void) {
+    libdragon_setup(); // Engine startup
+    DBG_OVERLAY_INIT(); // Debug components
 
     // Initialize components
     //components_init();
 
-    // Load default scene
-    //scene_load_scene(DEFAULT_SCENE_INDEX);
+    // Initialize the file container and load the default scene
+    // assert(scene_init_file_container(SCENE_DATA_PATH));
+    // assert(scene_try_load(DEFAULT_SCENE_INDEX));
 
-    // Awake pass (TODO)
-    // Start frame loop with updates (TODO)
+    // Start game loop
 }
 
-#endif
+void engine_run(void);
+
+#endif // STARTUP_H

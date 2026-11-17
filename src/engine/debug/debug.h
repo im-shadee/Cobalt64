@@ -9,16 +9,13 @@
 
 void dbg_overlay_init(void);
 void dbg_overlay_free(void);
-void dbg_show_inputs(int on);
 void dbg_show_memory(int on);
 void dbg_show_fps(int on);
-void dbg_overlay_update(joypad_port_t port); // once per frame, before drawing
 void dbg_overlay_draw(void); // after 3D draw, before rdpq_detach_show()
 void dbg_frame_end(void); // right after rdpq_detach_show()
 
 #define DBG_OVERLAY_INIT() dbg_overlay_init()
 #define DBG_OVERLAY_FREE() dbg_overlay_free()
-#define DBG_UPDATE(port) dbg_overlay_update(port)
 #define DBG_DRAW() dbg_overlay_draw()
 #define DBG_FRAME_END() dbg_frame_end()
 #else

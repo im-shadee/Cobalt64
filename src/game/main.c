@@ -24,7 +24,6 @@
 int main(void) {
     // Initialize engine and debug (debug builds only) components 
     engine_init();
-    DBG_OVERLAY_INIT();
 
     // Allocate Z-buffer in memory
     surface_t depth = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height());
@@ -58,7 +57,7 @@ int main(void) {
 
     while (1) {
         joypad_poll();
-        DBG_UPDATE(JOYPAD_PORT_1);
+        
         rspq_wait();
 
         // Update rotations dynamically every frame
