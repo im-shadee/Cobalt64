@@ -7,7 +7,6 @@
 
 #include "vectors.h"
 #include "bool.h"
-#include "hierarchy_tree.h"
 #include <stdint.h>
 
 /**
@@ -28,15 +27,15 @@ typedef struct {
 } Transform; // 60 bytes
 
 /** Sets the position vector of a transform and marks it as dirty. */
-static void transform_set_position(Transform* tr, const vec3f_t pos);
+void transform_set_position(Transform* tr, const vec3f_t pos);
 
 /** Sets the rotation vector of a transform and marks it as dirty. */
-static void transform_set_rotation(Transform* tr, const vec3f_t angles);
+void transform_set_rotation(Transform* tr, const vec3f_t angles);
 
 /** Sets the scale vector of a transform and marks it as dirty. */
-static void transform_set_scale(Transform* tr, const vec3f_t scale);
+void transform_set_scale(Transform* tr, const vec3f_t scale);
 
 /** Sets the shear vector of a transform and marks it as dirty. */
-static void transform_set_shear(Transform* tr, const vec3f_t shear);
+void transform_set_shear(Transform* tr, const vec3f_t shear);
 
 #endif // TRANSFORM_H

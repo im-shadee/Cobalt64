@@ -7,7 +7,7 @@
 #include "component.h"
 #include <stdint.h>
 
-static void transform_update(void* comps, const uint16_t* owners, uint16_t count, float dt) {
+void transform_update(void* comps, const uint16_t* owners, uint16_t count, float dt) {
     Transform** transforms = (Transform**)comps;
     Transform* tr;
     
@@ -21,20 +21,20 @@ static void transform_update(void* comps, const uint16_t* owners, uint16_t count
     }
 }
 
-static void transform_on_add(uint16_t obj_idx, void* comp) {
+void transform_on_add(uint16_t obj_idx, void* comp) {
     Transform* tr = (Transform*)comp;
     tr->render_mtx_index = matrix_pool_alloc();
     tr->scale = (vec3f_t){0, 0, 0};
     tr->is_dirty = TRUE;
 }
 
-static void transform_on_remove(uint16_t obj_idx, void* comp) {
+void transform_on_remove(uint16_t obj_idx, void* comp) {
     Transform* tr = (Transform*)comp;
     matrix_pool_free(tr->render_mtx_index);
     tr->render_mtx_index = MTX_NONE;
 }
 
-static void transform_set_position(Transform* tr, const vec3f_t pos) {
+void transform_set_position(Transform* tr, const vec3f_t pos) {
     assert(tr); // Crash if the transform is null
 
     // Assign the new position to the container inside the transform
@@ -44,7 +44,7 @@ static void transform_set_position(Transform* tr, const vec3f_t pos) {
     tr->is_dirty = TRUE;
 }
 
-static void transform_set_rotation(Transform* tr, const vec3f_t angles) {
+void transform_set_rotation(Transform* tr, const vec3f_t angles) {
     assert(tr); // Crash if the transform is null
 
     // Assign the new angles to the container inside the transform
@@ -54,7 +54,7 @@ static void transform_set_rotation(Transform* tr, const vec3f_t angles) {
     tr->is_dirty = TRUE;
 }
 
-static void transform_set_scale(Transform* tr, const vec3f_t scale) {
+void transform_set_scale(Transform* tr, const vec3f_t scale) {
     assert(tr); // Crash if the transform is null
 
     // Assign the new scale to the container inside the transform
@@ -64,7 +64,7 @@ static void transform_set_scale(Transform* tr, const vec3f_t scale) {
     tr->is_dirty = TRUE;
 }
 
-static void transform_set_shear(Transform* tr, const vec3f_t shear) {
+void transform_set_shear(Transform* tr, const vec3f_t shear) {
     assert(tr); // Crash if the transform is null
 
     // Assign the new shear to the container inside the transform
