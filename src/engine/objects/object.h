@@ -5,9 +5,9 @@
 #ifndef OBJ_H
 #define OBJ_H
 
-#include <stdint.h>
+#include "bool.h"
 #include "layers.h"
-#include "scenes.h"
+#include <stdint.h>
 
 // Packed ensures the enum only takes up 1 byte in memory
 typedef enum __attribute__((packed)) {
@@ -24,11 +24,11 @@ typedef struct {
         uint8_t bits;
         struct {
             /*0x01*/ uint8_t active_self : 1; // Whether this object is active (participating in the game loop)
-            /*0x02*/ uint8_t visible : 1; // Whether this object is visible (rendered by the graphics pipeline)
-            /*0x04*/ uint8_t destroy : 1; // Whether this object is pending destruction
-            /*0x08*/ uint8_t is_static : 1; // Whether this object is static (uses baked transforms)
-            /*0x10*/ uint8_t active_in_hierarchy : 1; // Whether this object is active in the hierarchy
-            /*0x18*/ uint8_t free : 1; // Whether this object is free, i.e. a free slot in the object pool
+            /*0x02*/ uint8_t active_in_hierarchy : 1; // Whether this object is active in the hierarchy
+            /*0x04*/ uint8_t visible : 1; // Whether this object is visible (rendered by the graphics pipeline)
+            /*0x08*/ uint8_t destroy : 1; // Whether this object is pending destruction
+            /*0x10*/ uint8_t free : 1; // Whether this object is free, i.e. a free slot in the object pool
+            /*0x18*/ uint8_t is_static : 1; // Whether this object is static (no transform)
             uint8_t unused : 2;
         };
     } flags; // 1 byte
@@ -46,7 +46,7 @@ _Static_assert(sizeof(Object) == 4, "Object must be 4 bytes");
  */
 uint16_t obj_init(uint8_t flags, render_layer_t layer, object_tags_t tag);
 
-/** 
+/**
  * Sets an object from the object pool as destroyed. Its index in the pool becomes invalid.
  * This runs on_remove hooks on all of the object's components.
  */
@@ -65,13 +65,13 @@ void obj_set_active(Object* o, bool_t value);
 static inline void obj_set_visible(Object* o, bool_t value) { o->flags.visible = value; }
 
 /** 
- * Checks whether the object itself is active.
+ * Checks whether the object is active.
  * @return 1 if active, 0 otherwise.
  * 
- * remarks: Checks for active flag in self, and in hierarchy.
+ * remarks: An object is "active" if it is locally active and its hierarchy path is active.
  */
 static inline bool_t obj_is_active(Object* o) { 
-    return o->flags.active_self | o->flags.active_in_hierarchy; 
+    return o->flags.active_self && o->flags.active_in_hierarchy; 
 }
 
 /** 
@@ -91,5 +91,13 @@ static inline bool_t obj_is_destroyed(Object* o) { return o->flags.destroy; }
  * @return 1 if static, 0 otherwise.
  */
 static inline bool_t obj_is_static(Object* o) { return o->flags.is_static; }
+
+/**
+ * Checks whether an object should render this frame.
+ * @return 1 if true, 0 otherwise.
+ */
+static inline bool_t obj_should_render(Object* o) { 
+    return obj_is_active(o) && o->flags.visible && !o->flags.free && !o->flags.destroy; 
+}
 
 #endif // OBJ_H

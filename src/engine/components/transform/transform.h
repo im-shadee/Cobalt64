@@ -5,8 +5,8 @@
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 
-#include "vectors.h"
 #include "bool.h"
+#include "vectors.h"
 #include <stdint.h>
 
 /**
@@ -22,9 +22,8 @@ typedef struct {
         uint16_t next_sibling_idx;
     } hierarchy_tree; // 6 bytes
 
-    uint16_t render_mtx_index;
     bool_t is_dirty;
-} Transform; // 60 bytes
+} Transform; // 56 bytes
 
 /** Sets the position vector of a transform and marks it as dirty. */
 void transform_set_position(Transform* tr, const vec3f_t pos);

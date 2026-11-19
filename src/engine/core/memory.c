@@ -23,7 +23,7 @@ void engine_mem_init(void) {
 }
 
 void* engine_mem_global_alloc(uint32_t size) {
-    size = (size + 7) & 7; // 8-byte alignment
+    size = (size + 15u) & ~15u; // 16-byte alignment matching cache line and DMA
 
     if (engine_memory.global_offset + size > GLOBAL_DATA_MEM) {
         return NULL; // Out of memory
@@ -36,7 +36,7 @@ void* engine_mem_global_alloc(uint32_t size) {
 }
 
 void* engine_mem_scene_alloc(uint32_t size) {
-    size = (size + 7) & 7; // 8-byte alignment
+    size = (size + 15u) & ~15u; // 16-byte alignment matching cache line and DMA
 
     if (engine_memory.scene_offset + size > SCENE_DATA_MEM) {
         return NULL; // Out of memory

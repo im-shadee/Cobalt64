@@ -1,10 +1,9 @@
 #ifndef INPUTS_H
 #define INPUTS_H
 
-#include <libdragon.h>
-#include <math.h>
 #include "bool.h"
 #include "vectors.h"
+#include <libdragon.h>
 
 #define JOY_DRIFT_THRESHOLD 30
 #define JOY_MAX_STICK_MAGNITUDE 80.0f

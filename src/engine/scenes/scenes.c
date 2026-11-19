@@ -3,23 +3,24 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-/**
+/*
  * Scene file layout:
  * Scene count
  * Index entries ([ID | Byte offset] per line)
  * Scene_i data blob 
-
+ *
  * We load the scene using an index (the "ID" part of the index entries)
  * Then we grab the data blob for this scene and parse it into the memory arena.
  */
 #include "config.h"
-#include "baked_transform.h"
 #include "memory.h"
 #include "object.h"
+#include "scenes.h"
 #include "transform.h"
 #include <stdint.h>
 #include <bool.h>
 #include <stdio.h>
+#include <t3d/t3dmodel.h>
 
 /** Maps a scene index to its data location in the scenes file. */
 typedef struct {
@@ -35,60 +36,51 @@ typedef struct {
 SceneIndexEntry* scene_index_table = NULL;
 uint16_t scene_count = 0;
 
-/** Holds count data for each component. Used to initialize core component pools. */
-typedef struct {
-    uint16_t baked_tr_count;
-    uint16_t transform_count;
-    uint16_t model_count;
-    uint16_t object_count;
-    uint16_t mesh_collider_count;
-    uint16_t aabb_collider_count;
-    uint16_t camera_count;
-} SceneFileHeader; // 14 bytes
-
-BakedTransform* baked_transforms;
-Transform* transforms;
-Object* objects;
+Transform* scene_transforms = NULL;
+Object* scene_objs = NULL;
+SceneFileHeader scene_header;
+T3DModel* scene_models = NULL;
+T3DMat4FP* scene_matrices = NULL;
+StaticBatch* scene_sbatches = NULL;
+DynamicBatch* scene_dbatches = NULL;
 
 bool_t try_parse_scene_data(FILE* container) {
-    // Unload the previous scene data immediately
-    scene_transition_reset();
-
-    // Read the header from the current position
-    SceneFileHeader header;
-    if (fread(&header, sizeof(SceneFileHeader), 1, container) != 1) {
-        return FALSE; // Failed to read scene header
+    // Read the scene_header from the current position
+    if (fread(&scene_header, sizeof(SceneFileHeader), 1, container) != 1) {
+        return FALSE; // Failed to read scene scene_header
     }
 
-    // Reserve memory for each core component
-    baked_transforms = (BakedTransform*)engine_mem_scene_alloc(header.baked_tr_count * sizeof(BakedTransform));
-    objects = (Object*)engine_mem_scene_alloc(header.object_count * sizeof(Object));
-    transforms = (Transform*)engine_mem_scene_alloc(header.transform_count * sizeof(Transform));
+    // Reserve memory for each core component (TODO: complete with types)
+    scene_objs = (Object*)engine_mem_scene_alloc(scene_header.object_count * sizeof(Object));
+    scene_transforms = (Transform*)engine_mem_scene_alloc(scene_header.transform_count * sizeof(Transform));
 
-    if (!baked_transforms || !objects || !transforms) {
+    if (!scene_objs || !scene_transforms) {
         return FALSE; // Out of scene memory
     }
 
     // Stream raw component data straight from disk/ROM into the arena buffers
-    if (header.baked_tr_count > 0) {
-        fread(baked_transforms, sizeof(BakedTransform), header.baked_tr_count, container);
+    if (scene_header.transform_count > 0) {
+        fread(scene_transforms, sizeof(Transform), scene_header.transform_count, container);
     }
-    if (header.transform_count > 0) {
-        fread(transforms, sizeof(Transform), header.transform_count, container);
-    }
-    if (header.object_count > 0) {
-        fread(objects, sizeof(Object), header.object_count, container);
+    if (scene_header.object_count > 0) {
+        fread(scene_objs, sizeof(Object), scene_header.object_count, container);
     }
 
     return TRUE;
 }
 
-bool_t scene_init() {
+void scene_free_models(void) {
+    for (int i = 0; i < scene_header.model_count; i++) {
+        t3d_model_free(&scene_models[i]);
+    }
+}
+
+bool_t scene_init(void) {
     // Open the scenes file from ROM
     FILE* file = fopen(SCENE_DATA_PATH, "rb");
     if (!file) return FALSE;
 
-    // Read the total number of scenes from the header
+    // Read the total number of scenes from the scene_header
     if (fread(&scene_count, sizeof(uint16_t), 1, file) != 1) {
         fclose(file);
         return FALSE;
@@ -115,6 +107,8 @@ bool_t scene_init() {
 
 bool_t scene_try_load(const uint16_t index) {
     if (index >= scene_count) return FALSE;
+    scene_free_models(); // Free all models before resetting the memory arena
+    engine_mem_reset_scene(); // Unload the previous scene actors
 
     FILE* file = fopen(SCENE_DATA_PATH, "rb");
     if (!file) return FALSE;

@@ -2,6 +2,7 @@
  * Copyright (c) 2026 Shadee
  * SPDX-License-Identifier: BSD-3-Clause
  */
+/*
 #include <libdragon.h>
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
@@ -118,7 +119,7 @@ int main(void) {
         t3d_light_set_count(1);
 
         rdpq_mode_push();
-        rdpq_mode_dithering(DITHER_NONE_NONE);
+        
 
         for (int i = 0; i < NUM_MODELS; i++) {
             t3d_matrix_push(transform_get_matrix(cubes[i]->render_mtx_index)); 
@@ -145,3 +146,4 @@ int main(void) {
 
     return 0;
 }
+*/
