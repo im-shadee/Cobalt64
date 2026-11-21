@@ -7,6 +7,7 @@
 
 #include "object.h"
 #include "transform.h"
+#include "model_instance.h"
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
 
@@ -36,11 +37,16 @@ typedef struct {
     uint16_t object_count; // How many objects share this model contiguously
 } DynamicBatch; // 6 bytes
 
-extern Transform* scene_transforms;
-extern Object* scene_objs;
 extern SceneFileHeader scene_header;
-extern T3DModel* scene_models;
+
+// Core components
+extern Object* scene_objs;
+extern Transform* scene_transforms;
 extern T3DMat4FP* scene_matrices;
+
+extern T3DModel* scene_models;
+extern ModelInstanceData* scene_models_data;
+
 extern StaticBatch* scene_sbatches;
 extern DynamicBatch* scene_dbatches;
 

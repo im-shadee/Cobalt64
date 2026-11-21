@@ -14,6 +14,7 @@
  */
 #include "config.h"
 #include "memory.h"
+#include "model_instance.h"
 #include "object.h"
 #include "scenes.h"
 #include "transform.h"
@@ -33,16 +34,21 @@ typedef struct {
     SceneIndexEntry entries[];
 } SceneFileContainerHeader; // 4 bytes
 
+SceneFileHeader scene_header;
+
 SceneIndexEntry* scene_index_table = NULL;
 uint16_t scene_count = 0;
 
-Transform* scene_transforms = NULL;
 Object* scene_objs = NULL;
-SceneFileHeader scene_header;
-T3DModel* scene_models = NULL;
+Transform* scene_transforms = NULL;
 T3DMat4FP* scene_matrices = NULL;
+
+T3DModel* scene_models = NULL;
+ModelInstanceData* scene_models_data = NULL;
+
 StaticBatch* scene_sbatches = NULL;
 DynamicBatch* scene_dbatches = NULL;
+
 
 bool_t try_parse_scene_data(FILE* container) {
     // Read the scene_header from the current position
