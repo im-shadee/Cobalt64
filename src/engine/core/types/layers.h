@@ -1,6 +1,9 @@
 #ifndef LAYERS_H
 #define LAYERS_H
 
+#define RENDER_MASK_NONE 0x00
+#define RENDER_MASK_ALL  0xFF
+
 // Packed ensures the enum only takes up 1 byte in memory
 typedef enum __attribute__((packed)) {
     RENDER_LAYER_SKYBOX = 0,

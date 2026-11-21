@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2026 Shadee
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 #ifndef LIGHTS_H
 #define LIGHTS_H
 
@@ -21,17 +25,18 @@ typedef Color8 AmbientLight; // 8 bytes
 
 /**
  * Dynamic light source component attached to scene entities (up to 7 active per draw call).
-
+ *
  * Position and direction are derived from the owning entity's Transform component.
  */
-typedef struct
-{
+typedef struct {
     float size;
     Color8 light_color;
+    uint16_t matrix_idx;
+    uint16_t _padding;
     light_source_type_t type;
     light_layer_t light_layer_mask;
     bool enabled;
     bool ignoreNormals;
-} LightSource; // 12 bytes
+} LightSource; // 16 bytes
 
 #endif // LIGHTS_H

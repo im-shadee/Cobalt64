@@ -12,6 +12,7 @@
  * We load the scene using an index (the "ID" part of the index entries)
  * Then we grab the data blob for this scene and parse it into the memory arena.
  */
+#include "camera.h"
 #include "config.h"
 #include "memory.h"
 #include "model_instance.h"
@@ -45,6 +46,7 @@ Transform* scene_transforms = NULL;
 T3DMat4FP* scene_matrices = NULL;
 
 LightSource* scene_lights = NULL;
+Camera* scene_cameras = NULL;
 
 T3DModel** scene_models = NULL;
 ModelInstanceData* scene_models_data = NULL;
@@ -118,6 +120,7 @@ bool scene_try_load(const uint16_t index) {
     if (index >= scene_count) return false;
     scene_free_models(); // Free all models before resetting the memory arena
     engine_mem_reset_scene(); // Unload the previous scene actors
+    camera_set_main(0); // Reset main camera to 0
 
     FILE* file = fopen(SCENE_DATA_PATH, "rb");
     if (!file) return false;
