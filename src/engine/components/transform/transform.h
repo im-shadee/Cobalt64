@@ -5,9 +5,9 @@
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 
-#include "bool.h"
 #include "vectors.h"
 #include <stdint.h>
+#include <stdbool.h>
 
 /**
  * Data structure holding the position, rotation and scale of an object as well as an index to its rendering matrix.
@@ -22,7 +22,8 @@ typedef struct {
         uint16_t next_sibling_idx;
     } hierarchy_tree; // 6 bytes
 
-    bool_t is_dirty;
+    bool is_dirty;
+    uint8_t padding;
 } Transform; // 56 bytes
 
 /** Sets the position vector of a transform and marks it as dirty. */

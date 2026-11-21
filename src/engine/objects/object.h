@@ -5,9 +5,9 @@
 #ifndef OBJ_H
 #define OBJ_H
 
-#include "bool.h"
 #include "layers.h"
 #include <stdint.h>
+#include <stdbool.h>
 
 // Packed ensures the enum only takes up 1 byte in memory
 typedef enum __attribute__((packed)) {
@@ -59,10 +59,10 @@ void obj_destroy(uint16_t index);
 //static inline Object* obj_get(uint16_t index) { return scene_get_object(index); }
 
 /** Toggles the object's active state. */
-void obj_set_active(Object* o, bool_t value);
+void obj_set_active(Object* o, bool value);
 
 /** Toggles the object's visibility state. */
-static inline void obj_set_visible(Object* o, bool_t value) { o->flags.visible = value; }
+static inline void obj_set_visible(Object* o, bool value) { o->flags.visible = value; }
 
 /** 
  * Checks whether the object is active.
@@ -70,7 +70,7 @@ static inline void obj_set_visible(Object* o, bool_t value) { o->flags.visible =
  * 
  * remarks: An object is "active" if it is locally active and its hierarchy path is active.
  */
-static inline bool_t obj_is_active(Object* o) { 
+static inline bool obj_is_active(Object* o) { 
     return o->flags.active_self && o->flags.active_in_hierarchy; 
 }
 
@@ -78,25 +78,25 @@ static inline bool_t obj_is_active(Object* o) {
  * Checks whether the object is visible.
  * @return 1 if visible, 0 otherwise.
  */
-static inline bool_t obj_is_visible(Object* o) { return o->flags.visible; }
+static inline bool obj_is_visible(Object* o) { return o->flags.visible; }
 
 /** 
  * Checks whether the object is pending destruction.
  * @return 1 if destroyed, 0 otherwise.
  */
-static inline bool_t obj_is_destroyed(Object* o) { return o->flags.destroy; }
+static inline bool obj_is_destroyed(Object* o) { return o->flags.destroy; }
 
 /** 
  * Checks whether the object is static.
  * @return 1 if static, 0 otherwise.
  */
-static inline bool_t obj_is_static(Object* o) { return o->flags.is_static; }
+static inline bool obj_is_static(Object* o) { return o->flags.is_static; }
 
 /**
  * Checks whether an object should render this frame.
  * @return 1 if true, 0 otherwise.
  */
-static inline bool_t obj_should_render(Object* o) { 
+static inline bool obj_should_render(Object* o) { 
     return obj_is_active(o) && o->flags.visible && !o->flags.free && !o->flags.destroy; 
 }
 

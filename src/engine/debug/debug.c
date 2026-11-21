@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifdef DEBUG
-#include "bool.h"
 #include "config.h"
 #include "debug.h"
 #include "inputs.h"
 #include <display.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -18,7 +18,7 @@
 #define FPS_UPDT_TICKS (TICKS_PER_SECOND)
 
 static rdpq_font_t *font;
-static bool_t show_mem = TRUE, show_fps = TRUE; // All debug flags by default
+static bool show_mem = true, show_fps = true; // All debug flags by default
 
 // Placeholder strings
 static char mem_str[40]   = "MEM: --% (--/-- B)";
@@ -30,8 +30,8 @@ static uint32_t last_fps_ticks, last_mem_ticks;
 // Linker symbol marking the end of the BSS / static data segment in Libdragon
 extern char __bss_end[];
 
-void dbg_show_memory(bool_t on) { show_mem = on; }
-void dbg_show_fps(bool_t on) { show_fps = on; }
+void dbg_show_memory(bool on) { show_mem = on; }
+void dbg_show_fps(bool on) { show_fps = on; }
 
 void dbg_overlay_init(void) {
     font = rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_MONO);

@@ -5,6 +5,7 @@
 #include "transform.h"
 #include "vectors.h"
 #include <assert.h>
+#include <stdbool.h>
 
 void transform_set_rotation(Transform* tr, const vec3f_t angles) {
     assert(tr); // Crash if the transform is null
@@ -13,7 +14,7 @@ void transform_set_rotation(Transform* tr, const vec3f_t angles) {
     tr->rotation = angles;
 
     // Mark the render matrix as dirty so it rebuilds with the new angles next rendering pass
-    tr->is_dirty = TRUE;
+    tr->is_dirty = true;
 }
 
 void transform_set_scale(Transform* tr, const vec3f_t scale) {
@@ -23,7 +24,7 @@ void transform_set_scale(Transform* tr, const vec3f_t scale) {
     tr->scale = scale;
 
     // Mark the render matrix as dirty so it rebuilds with the new scale next rendering pass
-    tr->is_dirty = TRUE;
+    tr->is_dirty = true;
 }
 
 void transform_set_shear(Transform* tr, const vec3f_t shear) {
@@ -33,5 +34,5 @@ void transform_set_shear(Transform* tr, const vec3f_t shear) {
     tr->shear = shear;
 
     // Mark the render matrix as dirty so it rebuilds with the new shearing next rendering pass
-    tr->is_dirty = TRUE;
+    tr->is_dirty = true;
 }
