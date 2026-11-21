@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2026 Shadee
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 #ifndef INPUTS_H
 #define INPUTS_H
 

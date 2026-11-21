@@ -3,7 +3,6 @@
 
 #define EPSILON 0.001f
 
-#include "custom_math.h"
 #include <stdint.h>
 #include <math.h>
 
@@ -62,7 +61,7 @@ static inline vec2f_t vec2f_scale(const vec2f_t u, const float k) { return (vec2
  *  - 0 otherwise
  */
 static inline int vec2f_equals(const vec2f_t u, const vec2f_t v, const float epsilon) {
-    return f32_abs(u.x - v.x) < epsilon && f32_abs(u.y - v.y) < epsilon;
+    return fabsf(u.x - v.x) < epsilon && fabsf(u.y - v.y) < epsilon;
 }
 
 /** 
@@ -125,9 +124,9 @@ static inline vec3f_t vec3f_scale(const vec3f_t u, const float k) { return (vec3
  *  - 0 otherwise
  */
 static inline int vec3f_equals(const vec3f_t u, const vec3f_t v, const float epsilon) {
-    return f32_abs(u.x - v.x) < epsilon &&
-           f32_abs(u.y - v.y) < epsilon &&
-           f32_abs(u.z - v.z) < epsilon;
+    return fabsf(u.x - v.x) < epsilon &&
+           fabsf(u.y - v.y) < epsilon &&
+           fabsf(u.z - v.z) < epsilon;
 }
 
 /** 

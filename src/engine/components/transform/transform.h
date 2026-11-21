@@ -23,7 +23,7 @@ typedef struct {
     } hierarchy_tree; // 6 bytes
 
     bool is_dirty;
-    uint8_t padding;
+    uint8_t _padding;
 } Transform; // 56 bytes
 
 /** Sets the position vector of a transform and marks it as dirty. */

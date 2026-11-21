@@ -12,8 +12,7 @@ typedef union {
     uint32_t raw; // For fast 32-bit copies, clears, comps
     uint8_t color[4]; // Raw byte streams into DMA
     color_t lc; // Libdragon color format
-    struct // Grants access to each channel individually
-    {
+    struct { // Grants access to each channel individually
         uint8_t r;
         uint8_t g;
         uint8_t b;

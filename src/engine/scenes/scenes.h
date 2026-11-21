@@ -5,6 +5,7 @@
 #ifndef SCENES_H
 #define SCENES_H
 
+#include "camera.h"
 #include "model_instance.h"
 #include "lights.h"
 #include "object.h"
@@ -18,11 +19,11 @@ typedef struct {
     uint16_t transform_count;
     uint16_t unique_model_count;
     uint16_t model_count;
-    uint16_t light_count;
+    uint8_t light_count;
     uint16_t object_count; // Also used for the matrix count (since all objects have a type of transform)
     uint16_t mesh_collider_count;
     uint16_t aabb_collider_count;
-    uint16_t camera_count;
+    uint8_t camera_count;
     uint16_t sbatch_count;
     uint16_t dbatch_count;
 } SceneFileHeader;
@@ -50,6 +51,7 @@ extern Transform* scene_transforms;
 extern T3DMat4FP* scene_matrices;
 
 extern LightSource* scene_lights;
+extern Camera* scene_cameras;
 
 extern T3DModel** scene_models;
 extern ModelInstanceData* scene_models_data;

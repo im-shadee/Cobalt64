@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #include "config.h"
+#include "cobalt_math.h"
 #include "debug.h"
 #include "object.h"
 #include "scenes.h"
@@ -14,74 +15,10 @@
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
 
-// Camera (TODO: Move to camera component)
-#define FOV_DEG 85.0f
-#define CAMERA_NEAR 2.0f
-#define CAMERA_FAR 1000.0f
-#define CAM_SPD 5
-
 void draw_model(T3DMat4FP* mtx, T3DModel* model) {
     t3d_matrix_push(mtx); // Push the matrix for rendering
     t3d_model_draw(model); // Draw the shared model from the batch at the coordinates defined by the matrix
     t3d_matrix_pop(1); // Pop the last matrix after drawing
-}
-
-void update_mtx(T3DMat4FP* mtx, vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t shr) {
-    // Convert float degrees to 16-bit BAMs
-    uint16_t x_bam = (uint16_t)(int32_t)(rot.x * DEG_TO_BAM);
-    uint16_t y_bam = (uint16_t)(int32_t)(rot.y * DEG_TO_BAM);
-    uint16_t z_bam = (uint16_t)(int32_t)(rot.z * DEG_TO_BAM);
-
-    // Fetch fixed-point values from LUT and scale them
-    float cx = fixed_cos(x_bam) * FIXED_TO_FLOAT;
-    float sx = fixed_sin(x_bam) * FIXED_TO_FLOAT;
-    
-    float cy = fixed_cos(y_bam) * FIXED_TO_FLOAT;
-    float sy = fixed_sin(y_bam) * FIXED_TO_FLOAT;
-    
-    float cz = fixed_cos(z_bam) * FIXED_TO_FLOAT;
-    float sz = fixed_sin(z_bam) * FIXED_TO_FLOAT;
-
-    // Compute rotation matrix values (compute matrix indexes instead of creating matrices)
-    float r00 = cy * cz;
-    float r01 = -cy * sz;
-    float r02 = sy;
-    
-    float r10 = sx * sy * cz + cx * sz;
-    float r11 = -sx * sy * sz + cx * cz;
-    float r12 = -sx * cy;
-    
-    float r20 = -cx * sy * cz + sx * sz;
-    float r21 = cx * sy * sz + sx * cz;
-    float r22 = cx * cy;
-
-    // Compute scale and shearing combined
-    float s00 = scale.x;
-    float s01 = shr.x * scale.y;
-    float s02 = shr.y * scale.z;
-
-    float s11 = scale.y;
-    float s12 = shr.z * scale.z;
-
-    float s22 = scale.z;
-
-    // T3D uses row-vector convention: translation in m[3][0..2]
-    // Matrix below is column-vector, so it is written transposed
-    T3DMat4 m;
-    float a[4][4] = {
-        {s00 * r00 + s01 * r10 + s02 * r20, s00 * r01 + s01 * r11 + s02 * r21, s00 * r02 + s01 * r12 + s02 * r22, pos.x},
-        {s11 * r10 + s12 * r20, s11 * r11 + s12 * r21, s11 * r12 + s12 * r22, pos.y},
-        {s22 * r20, s22 * r21, s22 * r22, pos.z},
-        {0, 0, 0, 1}
-    };
-
-    #pragma GCC unroll 4
-    for (int r = 0; r < 4; r++)
-        for (int c = 0; c < 4; c++)
-            m.m[c][r] = a[r][c];
-
-    // Convert standard float matrix to Tiny3D's hardware fixed-point format
-    t3d_mat4_to_fixed(mtx, &m);
 }
 
 void update_static_batches(void) {
@@ -114,7 +51,7 @@ void update_dynamic_batches(void) {
 
             // Recompute the render matrix if the object's transform is dirty
             Transform* tr = &scene_transforms[obj_idx];
-            if (tr->is_dirty) update_mtx(mtx, tr->position, tr->rotation, tr->scale, tr->shear);
+            if (tr->is_dirty) mtx_update(mtx, tr->position, tr->rotation, tr->scale, tr->shear);
 
             draw_model(mtx, model);
         }
@@ -131,6 +68,47 @@ void graphics_start_drawing(void) {
     rdpq_mode_pop();
 }
 
+void update_camera(const Camera* cam, T3DViewport* vp) {
+    // Set viewport area from rect and exposure
+    t3d_viewport_set_area(vp, cam->viewport.bounds.x, cam->viewport.bounds.y, 
+        cam->viewport.bounds.w, cam->viewport.bounds.h);
+    
+    t3d_light_set_exposure(cam->exposure);
+
+    // Set projection mode
+    float aspect = (float)cam->viewport.bounds.w / (float)cam->viewport.bounds.h;
+    switch (cam->projection) {
+        case PROJ_MODE_ORTHOGRAPHIC:
+            
+            float half_h = cam->fov * 0.5f;
+            float half_w = half_h * aspect;
+            t3d_viewport_set_ortho(vp, -half_w, half_w, -half_h, half_h, cam->near, cam->far);
+            break;
+
+        case PROJ_MODE_PERSPECTIVE:
+            t3d_viewport_set_perspective(vp, T3D_DEG_TO_RAD(cam->fov), aspect, cam->near, cam->far);
+        
+        default:
+            break;
+    }
+
+    // Extract world position & forward direction from the camera's FP matrix
+    const T3DMat4FP* cam_mtx = &scene_matrices[cam->matrix_idx];
+
+    T3DVec3 cam_pos, cam_forward;
+    mtx_get_position(cam_mtx, &cam_pos);
+    mtx_get_forward(cam_mtx, &cam_forward);
+
+    T3DVec3 cam_target = {{
+        cam_pos.x + cam_forward.x,
+        cam_pos.y + cam_forward.y,
+        cam_pos.z + cam_forward.z
+    }};
+    T3DVec3 cam_up = {{ 0.0f, 1.0f, 0.0f }}; // Set up as +Y
+
+    t3d_viewport_look_at(vp, &cam_pos, &cam_target, &cam_up);
+}
+
 void setup_lights(void) {
     // Setup ambient light
     t3d_light_set_ambient(scene_ambient.color);
@@ -142,8 +120,7 @@ void setup_lights(void) {
         LightSource* light = &scene_lights[i];
 
         // TODO: Derive position/direction from transform
-        switch (light->type)
-        {
+        switch (light->type) {
             case LIGHT_TYPE_DIRECTIONAL:
                 t3d_light_set_directional(i, light->light_color.color, &(T3DVec3){{0.0f, 1.0f, 0.0f}});
                 break;
@@ -185,19 +162,14 @@ void engine_run(void) {
     surface_t depth = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height()); // Allocate Z-buffer in memory
     T3DViewport viewport = t3d_viewport_create();
 
-    // TODO: Replace with main camera
-    T3DVec3 cam_pos    = {{0, 0, 0}};
-    T3DVec3 cam_target = {{0, 0, -1}}; // Define the 3D coordinate the camera is pointing toward
-    T3DVec3 cam_up     = {{0, 1, 0}}; // Define the Y axis as the "up" vector
-
     setup_lights();
 
     // Update pass
     while (1) {
         joypad_poll(); // Poll for inputs first
 
-        t3d_viewport_set_projection(&viewport, T3D_DEG_TO_RAD(FOV_DEG), CAMERA_NEAR, CAMERA_FAR);
-        t3d_viewport_look_at(&viewport, &cam_pos, &cam_target, &cam_up);
+        Camera* main = camera_get_main();
+        if (main) update_camera(camera_get_main(), &viewport);
         rdpq_attach(display_get(), &depth);
 
         t3d_frame_start(); // Start rendering a new frame
