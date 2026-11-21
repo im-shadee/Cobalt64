@@ -19,7 +19,7 @@
 #include "scenes.h"
 #include "transform.h"
 #include <stdint.h>
-#include <bool.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <t3d/t3dmodel.h>
 
@@ -35,6 +35,7 @@ typedef struct {
 } SceneFileContainerHeader; // 4 bytes
 
 SceneFileHeader scene_header;
+AmbientLight scene_ambient = COLOR_WHITE;
 
 SceneIndexEntry* scene_index_table = NULL;
 uint16_t scene_count = 0;
@@ -43,17 +44,19 @@ Object* scene_objs = NULL;
 Transform* scene_transforms = NULL;
 T3DMat4FP* scene_matrices = NULL;
 
-T3DModel* scene_models = NULL;
+LightSource* scene_lights = NULL;
+
+T3DModel** scene_models = NULL;
 ModelInstanceData* scene_models_data = NULL;
 
 StaticBatch* scene_sbatches = NULL;
 DynamicBatch* scene_dbatches = NULL;
 
 
-bool_t try_parse_scene_data(FILE* container) {
+bool try_parse_scene_data(FILE* container) {
     // Read the scene_header from the current position
     if (fread(&scene_header, sizeof(SceneFileHeader), 1, container) != 1) {
-        return FALSE; // Failed to read scene scene_header
+        return false; // Failed to read scene scene_header
     }
 
     // Reserve memory for each core component (TODO: complete with types)
@@ -61,7 +64,7 @@ bool_t try_parse_scene_data(FILE* container) {
     scene_transforms = (Transform*)engine_mem_scene_alloc(scene_header.transform_count * sizeof(Transform));
 
     if (!scene_objs || !scene_transforms) {
-        return FALSE; // Out of scene memory
+        return false; // Out of scene memory
     }
 
     // Stream raw component data straight from disk/ROM into the arena buffers
@@ -72,24 +75,24 @@ bool_t try_parse_scene_data(FILE* container) {
         fread(scene_objs, sizeof(Object), scene_header.object_count, container);
     }
 
-    return TRUE;
+    return true;
 }
 
 void scene_free_models(void) {
     for (int i = 0; i < scene_header.model_count; i++) {
-        t3d_model_free(&scene_models[i]);
+        t3d_model_free(scene_models[i]);
     }
 }
 
-bool_t scene_init(void) {
+bool scene_init(void) {
     // Open the scenes file from ROM
     FILE* file = fopen(SCENE_DATA_PATH, "rb");
-    if (!file) return FALSE;
+    if (!file) return false;
 
     // Read the total number of scenes from the scene_header
     if (fread(&scene_count, sizeof(uint16_t), 1, file) != 1) {
         fclose(file);
-        return FALSE;
+        return false;
     }
 
     // Reserve memory in the global pool for the table
@@ -98,26 +101,26 @@ bool_t scene_init(void) {
 
     if (!scene_index_table) {
         fclose(file);
-        return FALSE; // Out of memory
+        return false; // Out of memory
     }
 
     // Stream the index into persistent RAM
     if (fread(scene_index_table, sizeof(SceneIndexEntry), scene_count, file) != scene_count) {
         fclose(file);
-        return FALSE;
+        return false;
     }
 
     fclose(file);
-    return TRUE;
+    return true;
 }
 
-bool_t scene_try_load(const uint16_t index) {
-    if (index >= scene_count) return FALSE;
+bool scene_try_load(const uint16_t index) {
+    if (index >= scene_count) return false;
     scene_free_models(); // Free all models before resetting the memory arena
     engine_mem_reset_scene(); // Unload the previous scene actors
 
     FILE* file = fopen(SCENE_DATA_PATH, "rb");
-    if (!file) return FALSE;
+    if (!file) return false;
 
     // Direct lookup from persistent RAM table
     uint32_t target_offset = scene_index_table[index].file_offset;

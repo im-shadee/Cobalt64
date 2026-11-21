@@ -1,16 +1,16 @@
 #ifndef INPUTS_H
 #define INPUTS_H
 
-#include "bool.h"
 #include "vectors.h"
 #include <libdragon.h>
+#include <stdbool.h>
 
 #define JOY_DRIFT_THRESHOLD 30
 #define JOY_MAX_STICK_MAGNITUDE 80.0f
 #define JOY_INV_STICK_MAGNITUDE 0.0125f
 
 typedef enum {
-    IN_BTN_A, 
+    IN_BTN_A = 0,
     IN_BTN_B, 
     IN_BTN_START, 
     IN_BTN_L, 
@@ -26,7 +26,7 @@ typedef enum {
  * Checks the state of specified button in a given joypad button structure.
  * @return 1 if pressed, 0 otherwise.
  */
-static inline int inputs_get_button_state(input_button_t btn, joypad_buttons_t buttons) {
+static inline bool inputs_get_button_state(input_button_t btn, joypad_buttons_t buttons) {
     switch (btn) {
         case IN_BTN_A: return buttons.a;
         case IN_BTN_B: return buttons.b;
@@ -38,7 +38,7 @@ static inline int inputs_get_button_state(input_button_t btn, joypad_buttons_t b
         case IN_BTN_C_DOWN: return buttons.c_down;
         case IN_BTN_C_LEFT: return buttons.c_left;
         case IN_BTN_C_RIGHT: return buttons.c_right;
-        default: return FALSE;
+        default: return false;
     }
 }
 
@@ -46,7 +46,7 @@ static inline int inputs_get_button_state(input_button_t btn, joypad_buttons_t b
  * Checks whether a button on the specified joypad port (1-4) has been pressed this frame.
  * @return 1 if the button is pressed, 0 otherwise.
  */
-static inline int inputs_pressed_this_frame(input_button_t btn, joypad_port_t port) {
+static inline bool inputs_pressed_this_frame(input_button_t btn, joypad_port_t port) {
     joypad_buttons_t pressed = joypad_get_buttons_pressed(port);
     return inputs_get_button_state(btn, pressed);
 }
@@ -55,7 +55,7 @@ static inline int inputs_pressed_this_frame(input_button_t btn, joypad_port_t po
  * Checks whether a button on the specified joypad port (1-4) has been released this frame.
  * @return 1 if the button is released, 0 otherwise.
  */
-static inline int inputs_released_this_frame(input_button_t btn, joypad_port_t port) {
+static inline bool inputs_released_this_frame(input_button_t btn, joypad_port_t port) {
     joypad_buttons_t released = joypad_get_buttons_released(port);
     return inputs_get_button_state(btn, released);
 }
@@ -64,7 +64,7 @@ static inline int inputs_released_this_frame(input_button_t btn, joypad_port_t p
  * Checks whether a button on the specified joypad port (1-4) was held this frame.
  * @return 1 if the button is held, 0 otherwise.
  */
-static inline int inputs_held(input_button_t btn, joypad_port_t port) {
+static inline bool inputs_held(input_button_t btn, joypad_port_t port) {
     joypad_buttons_t held = joypad_get_buttons_held(port);
     return inputs_get_button_state(btn, held);
 }

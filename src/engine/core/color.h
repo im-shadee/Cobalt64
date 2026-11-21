@@ -19,7 +19,6 @@ typedef union {
         uint8_t b;
         uint8_t a;
     } channels; 
-    
 } Color8; // 4 bytes
 
 // Primaries
@@ -32,10 +31,11 @@ typedef union {
 #define COLOR_MAGENTA ((Color8){.color = {255, 0, 255, 255}})
 #define COLOR_CYAN ((Color8){.color = {0, 255, 255, 255}})
 
-// Tertiaries
+// Tints
 #define COLOR_ORANGE ((Color8){.color = {255, 128, 0, 255}})
 #define COLOR_PURPLE ((Color8){.color = {128, 0, 255, 255}})
 #define COLOR_BROWN ((Color8){.color = {139, 69, 19, 255}})
+#define COLOR_PINK ((Color8){.color = {255, 192, 203, 255}})
 
 // Neutrals and alpha
 #define COLOR_WHITE ((Color8){.color = {255, 255, 255, 255}})

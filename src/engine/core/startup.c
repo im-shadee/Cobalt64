@@ -10,6 +10,7 @@
 #include "trig.h"
 #include "transform.h"
 #include <libdragon.h>
+#include <stdbool.h>
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
 
@@ -86,7 +87,7 @@ void update_mtx(T3DMat4FP* mtx, vec3f_t pos, vec3f_t rot, vec3f_t scale, vec3f_t
 void update_static_batches(void) {
     for (int sb = 0; sb < scene_header.sbatch_count; sb++) {
         StaticBatch* sbatch = &scene_sbatches[sb];
-        T3DModel* model = &scene_models[sbatch->model_index]; // Shared model for the batch
+        T3DModel* model = scene_models[sbatch->model_index]; // Shared model for the batch
 
         for (int i = 0; i < sbatch->object_count; i++) {
             uint16_t obj_idx = sbatch->start_object_index + i;
@@ -102,7 +103,7 @@ void update_static_batches(void) {
 void update_dynamic_batches(void) {
     for (int db = 0; db < scene_header.dbatch_count; db++) {
         DynamicBatch* dbatch = &scene_dbatches[db];
-        T3DModel* model = &scene_models[dbatch->model_index]; // Shared model for the batch
+        T3DModel* model = scene_models[dbatch->model_index]; // Shared model for the batch
 
         for (int i = 0; i < dbatch->object_count; i++) {
             uint16_t obj_idx = dbatch->start_object_index + i;
@@ -128,6 +129,33 @@ void graphics_start_drawing(void) {
     update_dynamic_batches();
 
     rdpq_mode_pop();
+}
+
+void setup_lights(void) {
+    // Setup ambient light
+    t3d_light_set_ambient(scene_ambient.color);
+
+    // Setup direction/points lights
+    t3d_light_set_count(scene_header.light_count);
+
+    for (int i = 0; i < scene_header.light_count; i++) {
+        LightSource* light = &scene_lights[i];
+
+        // TODO: Derive position/direction from transform
+        switch (light->type)
+        {
+            case LIGHT_TYPE_DIRECTIONAL:
+                t3d_light_set_directional(i, light->light_color.color, &(T3DVec3){{0.0f, 1.0f, 0.0f}});
+                break;
+            
+            case LIGHT_TYPE_POINT:
+                t3d_light_set_point(i, light->light_color.color, &(T3DVec3){{0.0f, 0.0f, 0.0f}}, light->size, light->ignoreNormals);
+                break;
+
+            default:
+                break;
+        }
+    }
 }
 
 void libdragon_setup(void) {
@@ -161,6 +189,8 @@ void engine_run(void) {
     T3DVec3 cam_pos    = {{0, 0, 0}};
     T3DVec3 cam_target = {{0, 0, -1}}; // Define the 3D coordinate the camera is pointing toward
     T3DVec3 cam_up     = {{0, 1, 0}}; // Define the Y axis as the "up" vector
+
+    setup_lights();
 
     // Update pass
     while (1) {
