@@ -27,6 +27,9 @@
 #define FRAMEBUFFER_COUNT 2
 #define DITHER_MODE 15 // DITHER_NONE_NONE by default
 
+#define ENGINE_RES_WIDTH 320
+#define ENGINE_RES_HEIGHT 240
+
 #pragma endregion
 
 #endif // CONFIG_H

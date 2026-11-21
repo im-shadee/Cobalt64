@@ -8,7 +8,6 @@
 #include <stdint.h>
 
 typedef union {
-    uint64_t raw; // For quick comparisons
     uint16_t coords[4];
     struct { // Grants access to each coordinate individually
         uint16_t x;

@@ -5,6 +5,7 @@
 #include "config.h"
 #include "cobalt_math.h"
 #include "debug.h"
+#include "layers.h"
 #include "object.h"
 #include "scenes.h"
 #include "startup.h"
@@ -21,7 +22,7 @@ void draw_model(T3DMat4FP* mtx, T3DModel* model) {
     t3d_matrix_pop(1); // Pop the last matrix after drawing
 }
 
-void update_static_batches(void) {
+void update_static_batches(uint8_t culling_mask) {
     for (int sb = 0; sb < scene_header.sbatch_count; sb++) {
         StaticBatch* sbatch = &scene_sbatches[sb];
         T3DModel* model = scene_models[sbatch->model_index]; // Shared model for the batch
@@ -29,7 +30,9 @@ void update_static_batches(void) {
         for (int i = 0; i < sbatch->object_count; i++) {
             uint16_t obj_idx = sbatch->start_object_index + i;
             Object* o = &scene_objs[obj_idx];
-            if (!obj_should_render(o)) continue;
+
+            if (!obj_should_render(o)) continue; // Skip inactive objects
+            if ((culling_mask & (1 << o->layer)) == 0) continue; // Skip if this object's render_layer is culled by camera
 
             T3DMat4FP* mtx = &scene_matrices[obj_idx];
             draw_model(mtx, model);
@@ -37,7 +40,7 @@ void update_static_batches(void) {
     }
 }
 
-void update_dynamic_batches(void) {
+void update_dynamic_batches(uint8_t culling_mask) {
     for (int db = 0; db < scene_header.dbatch_count; db++) {
         DynamicBatch* dbatch = &scene_dbatches[db];
         T3DModel* model = scene_models[dbatch->model_index]; // Shared model for the batch
@@ -45,68 +48,33 @@ void update_dynamic_batches(void) {
         for (int i = 0; i < dbatch->object_count; i++) {
             uint16_t obj_idx = dbatch->start_object_index + i;
             Object* o = &scene_objs[obj_idx];
-            if (!obj_should_render(o)) continue;
+
+            if (!obj_should_render(o)) continue; // Skip inactive objects
+            if ((culling_mask & (1 << o->layer)) == 0) continue; // Skip if this object's render_layer is culled by camera
 
             T3DMat4FP* mtx = &scene_matrices[obj_idx];
+            Transform* tr = &scene_transforms[obj_idx];
 
             // Recompute the render matrix if the object's transform is dirty
-            Transform* tr = &scene_transforms[obj_idx];
-            if (tr->is_dirty) mtx_update(mtx, tr->position, tr->rotation, tr->scale, tr->shear);
+            if (tr->is_dirty){
+                mtx_update(mtx, tr->position, tr->rotation, tr->scale, tr->shear);
+                data_cache_hit_writeback(mtx, sizeof(T3DMat4FP));
+                tr->is_dirty = false;
+            }
 
             draw_model(mtx, model);
         }
     }
 }
 
-void graphics_start_drawing(void) {
+void graphics_start_drawing(uint8_t culling_mask) {
     rdpq_mode_push();
 
     // Update the static batches first, then dynamic
-    update_static_batches();
-    update_dynamic_batches();
+    update_static_batches(culling_mask);
+    update_dynamic_batches(culling_mask);
 
     rdpq_mode_pop();
-}
-
-void update_camera(const Camera* cam, T3DViewport* vp) {
-    // Set viewport area from rect and exposure
-    t3d_viewport_set_area(vp, cam->viewport.bounds.x, cam->viewport.bounds.y, 
-        cam->viewport.bounds.w, cam->viewport.bounds.h);
-    
-    t3d_light_set_exposure(cam->exposure);
-
-    // Set projection mode
-    float aspect = (float)cam->viewport.bounds.w / (float)cam->viewport.bounds.h;
-    switch (cam->projection) {
-        case PROJ_MODE_ORTHOGRAPHIC:
-            
-            float half_h = cam->fov * 0.5f;
-            float half_w = half_h * aspect;
-            t3d_viewport_set_ortho(vp, -half_w, half_w, -half_h, half_h, cam->near, cam->far);
-            break;
-
-        case PROJ_MODE_PERSPECTIVE:
-            t3d_viewport_set_perspective(vp, T3D_DEG_TO_RAD(cam->fov), aspect, cam->near, cam->far);
-        
-        default:
-            break;
-    }
-
-    // Extract world position & forward direction from the camera's FP matrix
-    const T3DMat4FP* cam_mtx = &scene_matrices[cam->matrix_idx];
-
-    T3DVec3 cam_pos, cam_forward;
-    mtx_get_position(cam_mtx, &cam_pos);
-    mtx_get_forward(cam_mtx, &cam_forward);
-
-    T3DVec3 cam_target = {{
-        cam_pos.x + cam_forward.x,
-        cam_pos.y + cam_forward.y,
-        cam_pos.z + cam_forward.z
-    }};
-    T3DVec3 cam_up = {{ 0.0f, 1.0f, 0.0f }}; // Set up as +Y
-
-    t3d_viewport_look_at(vp, &cam_pos, &cam_target, &cam_up);
 }
 
 void setup_lights(void) {
@@ -140,7 +108,17 @@ void libdragon_setup(void) {
     
     init_trig_table(); // Initialize trig.h sine table
     dfs_init(DFS_DEFAULT_LOCATION); // Initialize the filesystem (allows to read files bundled into the ROM)
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, FRAMEBUFFER_COUNT, GAMMA_NONE, FILTERS_RESAMPLE);
+    display_init(
+        (resolution_t){
+            .height = ENGINE_RES_HEIGHT, 
+            .width = ENGINE_RES_WIDTH, 
+            .interlaced = ((ENGINE_RES_HEIGHT) > 288) ? INTERLACE_HALF : INTERLACE_OFF,
+        }, 
+        DEPTH_16_BPP, 
+        FRAMEBUFFER_COUNT, 
+        GAMMA_NONE, 
+        FILTERS_RESAMPLE
+    );
 
     rdpq_init();
     rdpq_mode_dithering(DITHER_MODE);
@@ -169,7 +147,7 @@ void engine_run(void) {
         joypad_poll(); // Poll for inputs first
 
         Camera* main = camera_get_main();
-        if (main) update_camera(camera_get_main(), &viewport);
+        if (main) camera_update(camera_get_main(), &viewport);
         rdpq_attach(display_get(), &depth);
 
         t3d_frame_start(); // Start rendering a new frame
@@ -178,7 +156,8 @@ void engine_run(void) {
         t3d_screen_clear_color(RGBA32(0x20, 0x30, 0x60, 0xFF));
         t3d_screen_clear_depth();
 
-        graphics_start_drawing(); // Draws objects in the scene
+        uint8_t mask = main ? main->culling_mask : RENDER_MASK_ALL;
+        graphics_start_drawing(mask);
         DBG_DRAW(); // Draw debug overlay in debug builds if enabled
         rdpq_detach_show();
         DBG_FRAME_END(); // Mark the frame as ended for the profiler
