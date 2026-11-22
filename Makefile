@@ -44,7 +44,7 @@ ASSETS_CONV := $(ASSETS_PNG:$(ASSETS_DIR)/%.png=filesystem/%.sprite) \
 filesystem/%.sprite: $(ASSETS_DIR)/%.png
 	@mkdir -p $(dir $@)
 	@echo "    [SPRITE] $@"
-	$(N64_MKSPRITE) $(MKSPRITE_FLAGS) -o $(dir $@) "$<"
+	$(N64_MKSPRITE) $(MKSPRITE_FLAGS) --format IA8 -o $(dir $@) "$<"
 
 filesystem/%.t3dm: $(ASSETS_DIR)/%.glb
 	@mkdir -p $(dir $@)

@@ -176,6 +176,31 @@ float time_tick(void) {
     return (float)delta_ticks / (float)TICKS_PER_SECOND; // Convert ticks into fractional seconds
 }
 
+typedef struct {
+    sprite_t *master_sheet;
+    int anim_frame;
+    int frame_w;
+    int frame_h;
+} AnimatedModelContext;
+
+void draw_callback(void *user_data, const T3DMaterial *mat,
+                   rdpq_texparms_t *tileParams, rdpq_tile_t tile) {
+    AnimatedModelContext *ctx = (AnimatedModelContext*)user_data;
+    surface_t surf = sprite_get_pixels(ctx->master_sheet);
+
+    debugf("mat tex %dx%d sheet %dx%d\n",
+    mat->textureA.texWidth, mat->textureA.texHeight,
+    ctx->master_sheet->width, ctx->master_sheet->height);
+
+    int cols = surf.width / ctx->frame_w;
+    int rows = surf.height / ctx->frame_h;
+    int f = ctx->anim_frame % (cols * rows);
+    int x = (f % cols) * ctx->frame_w;
+    int y = (f / cols) * ctx->frame_h;
+
+    rdpq_tex_upload_sub(tile, &surf, NULL, x, y, x + ctx->frame_w, y + ctx->frame_h);
+}
+
 void libdragon_setup(void) {
     INIT_DEBUG(); // Initialize debug logging
     timer_init();
@@ -218,6 +243,8 @@ void engine_run(void) {
     surface_t depth = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height()); // Allocate Z-buffer in memory
     T3DViewport viewport = t3d_viewport_create();
 
+    T3DMat4FP* mtx = malloc_uncached(sizeof(mtx));
+
     // Update pass
     while (1) {
         float delta_time = time_tick(); // Compute delta time for this frame
@@ -233,6 +260,14 @@ void engine_run(void) {
 
         t3d_screen_clear_color(RGBA32(0x20, 0x30, 0x60, 0xFF));
         t3d_screen_clear_depth();
+
+        Color8 color = COLOR_YELLOW;
+        Color8 shade = COLOR_BROWN;
+        rdpq_set_prim_color(color.lc);
+        rdpq_set_env_color(shade.lc);
+
+        t3d_matrix_push(mtx);
+        t3d_model_draw_custom(model, (T3DModelDrawConf){.userData = &coin_anim})
 
         // Update camera
         Camera* main = camera_get_main();
