@@ -16,6 +16,8 @@
 #include <t3d/t3d.h>
 #include <t3d/t3dmodel.h>
 
+uint64_t last_ticks = 0;
+
 void draw_model(T3DMat4FP* mtx, T3DModel* model) {
     t3d_matrix_push(mtx); // Push the matrix for rendering
     t3d_model_draw(model); // Draw the shared model from the batch at the coordinates defined by the matrix
@@ -103,10 +105,81 @@ void setup_lights(void) {
     }
 }
 
+void actors_on_add() {
+    for (int i = 0; i < scene_header.actor_instances_count; i++) {
+        ActorInstance* instance = &scene_actor_instances[i];
+
+        // Skip inactive/free slots
+        if (!instance->enabled || !obj_should_render(&scene_objs[instance->obj_idx])) continue;
+
+        // Look up the shared behavior blueprint using the index
+        ActorBehavior* behavior = &scene_shared_actors[instance->shared_actor_idx];
+
+        // Call the update function pointer if it exists
+        if (behavior->on_add) behavior->on_add(instance->obj_idx, instance->actor_data);
+    }
+}
+
+void actors_on_destroy() {
+    for (int i = 0; i < scene_header.actor_instances_count; i++) {
+        ActorInstance* instance = &scene_actor_instances[i];
+
+        if (!obj_is_destroyed(&scene_objs[instance->obj_idx])) continue;
+
+        // Look up the shared behavior blueprint using the index
+        ActorBehavior* behavior = &scene_shared_actors[instance->shared_actor_idx];
+
+        // Call the update function pointer if it exists
+        if (behavior->on_destroy) behavior->on_destroy(instance->obj_idx, instance->actor_data);
+    }
+}
+
+void actors_start() {
+    for (int i = 0; i < scene_header.actor_instances_count; i++) {
+        ActorInstance* instance = &scene_actor_instances[i];
+
+        // Skip inactive/free slots
+        if (!instance->enabled || !obj_should_render(&scene_objs[instance->obj_idx])) continue;
+
+        // Look up the shared behavior blueprint using the index
+        ActorBehavior* behavior = &scene_shared_actors[instance->shared_actor_idx];
+
+        // Call the update function pointer if it exists
+        if (behavior->start) behavior->start(instance->obj_idx, instance->actor_data);
+    }
+}
+
+void actors_update(float dt) {
+    for (int i = 0; i < scene_header.actor_instances_count; i++) {
+        ActorInstance* instance = &scene_actor_instances[i];
+
+        // Skip inactive/free slots
+        if (!instance->enabled || !obj_should_render(&scene_objs[instance->obj_idx])) continue;
+
+        // Look up the shared behavior blueprint using the index
+        ActorBehavior* behavior = &scene_shared_actors[instance->shared_actor_idx];
+
+        // Call the update function pointer if it exists
+        if (behavior->update) behavior->update(instance->obj_idx, instance->actor_data, dt);
+    }
+}
+
+void time_init(void) {
+    last_ticks = timer_ticks();
+}
+
+float time_tick(void) {
+    uint64_t current_ticks = timer_ticks();
+    uint64_t delta_ticks = current_ticks - last_ticks;
+    last_ticks = current_ticks;
+
+    return (float)delta_ticks / (float)TICKS_PER_SECOND; // Convert ticks into fractional seconds
+}
+
 void libdragon_setup(void) {
     INIT_DEBUG(); // Initialize debug logging
+    timer_init();
     
-    init_trig_table(); // Initialize trig.h sine table
     dfs_init(DFS_DEFAULT_LOCATION); // Initialize the filesystem (allows to read files bundled into the ROM)
     display_init(
         (resolution_t){
@@ -128,6 +201,7 @@ void libdragon_setup(void) {
 
 void engine_init(void) {
     libdragon_setup(); // Libdragon init
+    init_trig_table(); // Initialize trig.h sine table
     DBG_OVERLAY_INIT(); // Debug components
     engine_mem_init(); // Initialize engine memory arena
     scene_init(); // Initialize scene header
@@ -135,19 +209,23 @@ void engine_init(void) {
 
 void engine_run(void) {
     // On Add pass
+    actors_on_add(); // TODO: Handle what happens when objects/components aren't active at this state
     
     // Start pass
+    actors_start(); // TODO: Handle what happens when objects/components aren't active at this state
+    setup_lights();
+
     surface_t depth = surface_alloc(FMT_RGBA16, display_get_width(), display_get_height()); // Allocate Z-buffer in memory
     T3DViewport viewport = t3d_viewport_create();
 
-    setup_lights();
-
     // Update pass
     while (1) {
-        joypad_poll(); // Poll for inputs first
+        float delta_time = time_tick(); // Compute delta time for this frame
+        if (delta_time > 0.1f) delta_time = 0.1f; // Avoid massive dt spikes if the engine hitches
 
-        Camera* main = camera_get_main();
-        if (main) camera_update(camera_get_main(), &viewport);
+        joypad_poll(); // Poll for inputs first
+        actors_update(delta_time); // Update actors
+        
         rdpq_attach(display_get(), &depth);
 
         t3d_frame_start(); // Start rendering a new frame
@@ -156,10 +234,19 @@ void engine_run(void) {
         t3d_screen_clear_color(RGBA32(0x20, 0x30, 0x60, 0xFF));
         t3d_screen_clear_depth();
 
+        // Update camera
+        Camera* main = camera_get_main();
         uint8_t mask = main ? main->culling_mask : RENDER_MASK_ALL;
+
+        if (main) camera_update(camera_get_main(), &viewport);
+        
         graphics_start_drawing(mask);
         DBG_DRAW(); // Draw debug overlay in debug builds if enabled
         rdpq_detach_show();
+
+        // Destroy pass (TODO)
+        actors_on_destroy();
+
         DBG_FRAME_END(); // Mark the frame as ended for the profiler
     }
 

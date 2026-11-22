@@ -12,6 +12,7 @@
  * We load the scene using an index (the "ID" part of the index entries)
  * Then we grab the data blob for this scene and parse it into the memory arena.
  */
+#include "actors.h"
 #include "camera.h"
 #include "config.h"
 #include "memory.h"
@@ -29,11 +30,6 @@ typedef struct {
     uint16_t scene_id;
     uint32_t file_offset; // Exact byte offset where the scene data begins
 } SceneIndexEntry; // 8 bytes
-
-typedef struct {
-    uint16_t count;
-    SceneIndexEntry entries[];
-} SceneFileContainerHeader; // 4 bytes
 
 SceneFileHeader scene_header;
 AmbientLight scene_ambient = COLOR_WHITE;
@@ -54,6 +50,13 @@ ModelInstanceData* scene_models_data = NULL;
 StaticBatch* scene_sbatches = NULL;
 DynamicBatch* scene_dbatches = NULL;
 
+ActorBehavior* scene_shared_actors = NULL;
+ActorInstance* scene_actor_instances = NULL;
+
+TriggerActorBehavior* scene_trigger_behaviors = NULL;
+TriggerActorInstance* scene_trigger_instances = NULL;
+
+#pragma region Scene Loading
 
 bool try_parse_scene_data(FILE* container) {
     // Read the scene_header from the current position
@@ -132,3 +135,20 @@ bool scene_try_load(const uint16_t index) {
     fseek(file, target_offset, SEEK_SET);
     return try_parse_scene_data(file);
 }
+
+#pragma endregion
+
+#pragma region Component Search
+
+// TODO: Make searches in both persistent/scene objects and make a persistent component manager. 
+// Also split scene functions into multiple headers
+ActorInstance* find_actor_instance_by_idx(uint16_t obj_idx) {
+    for (uint16_t i = 0; i < scene_header.actor_instances_count; i++) {
+        if (scene_actor_instances[i].obj_idx == obj_idx) {
+            return &scene_actor_instances[i];
+        }
+    }
+    return NULL;
+}
+
+#pragma endregion
