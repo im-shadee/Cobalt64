@@ -16,14 +16,13 @@
 #include "camera.h"
 #include "config.h"
 #include "memory.h"
-#include "model_instance.h"
+#include "models.h"
 #include "object.h"
 #include "scenes.h"
 #include "transform.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <t3d/t3dmodel.h>
 
 /** Maps a scene index to its data location in the scenes file. */
 typedef struct {
@@ -44,11 +43,8 @@ T3DMat4FP* scene_matrices = NULL;
 LightSource* scene_lights = NULL;
 Camera* scene_cameras = NULL;
 
-T3DModel** scene_models = NULL;
-ModelInstanceData* scene_models_data = NULL;
-
-StaticBatch* scene_sbatches = NULL;
-DynamicBatch* scene_dbatches = NULL;
+T3DModel** scene_shared_models = NULL;
+ModelInstance* scene_model_data = NULL;
 
 ActorBehavior* scene_shared_actors = NULL;
 ActorInstance* scene_actor_instances = NULL;
@@ -84,8 +80,8 @@ bool try_parse_scene_data(FILE* container) {
 }
 
 void scene_free_models(void) {
-    for (int i = 0; i < scene_header.model_count; i++) {
-        t3d_model_free(scene_models[i]);
+    for (int i = 0; i < scene_header.shared_model_count; i++) {
+        t3d_model_free(scene_shared_models[i]);
     }
 }
 

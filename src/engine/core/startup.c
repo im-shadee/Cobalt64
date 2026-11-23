@@ -6,6 +6,7 @@
 #include "cobalt_math.h"
 #include "debug.h"
 #include "layers.h"
+#include "models.h"
 #include "object.h"
 #include "scenes.h"
 #include "startup.h"
@@ -14,68 +15,52 @@
 #include <libdragon.h>
 #include <stdbool.h>
 #include <t3d/t3d.h>
-#include <t3d/t3dmodel.h>
 
 uint64_t last_ticks = 0;
 
-void draw_model(T3DMat4FP* mtx, T3DModel* model) {
+void draw_model(T3DMat4FP* mtx, T3DModel* model, Color8 base_color, Color8 shade_color) {
     t3d_matrix_push(mtx); // Push the matrix for rendering
-    t3d_model_draw(model); // Draw the shared model from the batch at the coordinates defined by the matrix
+
+    // Set the RDP primitive/env color register right before drawing, if the combiner setting allows it
+    rdpq_set_prim_color(base_color.lc);
+    rdpq_set_env_color(shade_color.lc);
+
+    t3d_model_draw(model); // Draw the shared model at the coordinates defined by the matrix
     t3d_matrix_pop(1); // Pop the last matrix after drawing
 }
 
-void update_static_batches(uint8_t culling_mask) {
-    for (int sb = 0; sb < scene_header.sbatch_count; sb++) {
-        StaticBatch* sbatch = &scene_sbatches[sb];
-        T3DModel* model = scene_models[sbatch->model_index]; // Shared model for the batch
+void scene_draw_models(uint8_t culling_mask) {
+    for (int i = 0; i < scene_header.model_instances_count; i++) {
+        ModelInstance* md_instance = &scene_model_data[i];
+        if (!md_instance->enabled) continue; // Skip if the component is disabled
 
-        for (int i = 0; i < sbatch->object_count; i++) {
-            uint16_t obj_idx = sbatch->start_object_index + i;
-            Object* o = &scene_objs[obj_idx];
+        Object* o = &scene_objs[md_instance->obj_index];
+        if (!obj_should_render(o)) continue; // Skip if the object is disabled, free or destroyed
+        if ((culling_mask & (1 << o->layer)) == 0) continue; // Skip if this object's render_layer is culled by camera
 
-            if (!obj_should_render(o)) continue; // Skip inactive objects
-            if ((culling_mask & (1 << o->layer)) == 0) continue; // Skip if this object's render_layer is culled by camera
+        // Get the shared model and the object's matrix to pass to hand for drawing
+        T3DModel* md_shared = scene_shared_models[md_instance->model_index];
+        T3DMat4FP* md_render_mtx = &scene_matrices[md_instance->obj_index];
 
-            T3DMat4FP* mtx = &scene_matrices[obj_idx];
-            draw_model(mtx, model);
-        }
-    }
-}
-
-void update_dynamic_batches(uint8_t culling_mask) {
-    for (int db = 0; db < scene_header.dbatch_count; db++) {
-        DynamicBatch* dbatch = &scene_dbatches[db];
-        T3DModel* model = scene_models[dbatch->model_index]; // Shared model for the batch
-
-        for (int i = 0; i < dbatch->object_count; i++) {
-            uint16_t obj_idx = dbatch->start_object_index + i;
-            Object* o = &scene_objs[obj_idx];
-
-            if (!obj_should_render(o)) continue; // Skip inactive objects
-            if ((culling_mask & (1 << o->layer)) == 0) continue; // Skip if this object's render_layer is culled by camera
-
-            T3DMat4FP* mtx = &scene_matrices[obj_idx];
-            Transform* tr = &scene_transforms[obj_idx];
+        if (!obj_is_static(o)) {
+            Transform* tr = &scene_transforms[md_instance->obj_index];
 
             // Recompute the render matrix if the object's transform is dirty
             if (tr->is_dirty){
-                mtx_update(mtx, tr->position, tr->rotation, tr->scale, tr->shear);
-                data_cache_hit_writeback(mtx, sizeof(T3DMat4FP));
+                mtx_update(md_render_mtx, tr->position, tr->rotation, tr->scale, tr->shear);
+                data_cache_hit_writeback(md_render_mtx, sizeof(T3DMat4FP));
                 tr->is_dirty = false;
             }
-
-            draw_model(mtx, model);
         }
+
+        draw_model(md_render_mtx, md_shared, 
+            md_instance->base_color, md_instance->shade_color);   
     }
 }
 
 void graphics_start_drawing(uint8_t culling_mask) {
     rdpq_mode_push();
-
-    // Update the static batches first, then dynamic
-    update_static_batches(culling_mask);
-    update_dynamic_batches(culling_mask);
-
+    scene_draw_models(culling_mask);
     rdpq_mode_pop();
 }
 

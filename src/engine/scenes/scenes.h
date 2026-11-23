@@ -20,8 +20,8 @@ typedef struct {
     uint16_t object_count; // Also used for the matrix count (since all objects have a type of transform)
     uint16_t transform_count;
 
-    uint16_t model_count;
-    uint16_t unique_model_count;
+    uint16_t model_instances_count;
+    uint16_t shared_model_count;
     
     uint16_t mesh_collider_count;
     uint16_t aabb_collider_count;
@@ -30,32 +30,14 @@ typedef struct {
     uint16_t actor_instances_count;
     uint16_t trigger_behaviour_count;
     uint16_t trigger_instances_count;
-    
-    uint16_t sbatch_count;
-    uint16_t dbatch_count;
 
     uint8_t camera_count;
     uint8_t light_count;
 } SceneFileHeader;
 
-/** Holds batching data for models (static). Objects are sorted by batch, making game loop updates more performant. */
-typedef struct {
-    uint16_t model_index; // Index of the model used by this batch
-    uint16_t start_object_index; // Where this batch starts in the object pool
-    uint16_t object_count; // How many objects share this model contiguously
-} StaticBatch; // 6 bytes
-
-/** Holds batching data for models. Objects are sorted by batch, making game loop updates more performant. */
-typedef struct {
-    uint16_t model_index; // Index of the model used by this batch
-    uint16_t start_object_index; // Where this batch starts in the object pool
-    uint16_t object_count; // How many objects share this model contiguously
-} DynamicBatch; // 6 bytes
-
 extern SceneFileHeader scene_header;
 extern AmbientLight scene_ambient;
 
-// Core components
 extern Object* scene_objs;
 extern Transform* scene_transforms;
 extern T3DMat4FP* scene_matrices;
@@ -63,11 +45,8 @@ extern T3DMat4FP* scene_matrices;
 extern LightSource* scene_lights;
 extern Camera* scene_cameras;
 
-extern T3DModel** scene_models;
-extern ModelInstanceData* scene_models_data;
-
-extern StaticBatch* scene_sbatches;
-extern DynamicBatch* scene_dbatches;
+extern T3DModel** scene_shared_models;
+extern ModelInstance* scene_model_data;
 
 extern ActorBehavior* scene_shared_actors;
 extern ActorInstance* scene_actor_instances;
