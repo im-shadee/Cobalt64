@@ -48,6 +48,7 @@ ModelInstance* scene_model_data = NULL;
 
 ActorBehavior* scene_shared_actors = NULL;
 ActorInstance* scene_actor_instances = NULL;
+uint8_t* scene_actor_data_blob = NULL;
 
 TriggerActorBehavior* scene_trigger_behaviors = NULL;
 TriggerActorInstance* scene_trigger_instances = NULL;

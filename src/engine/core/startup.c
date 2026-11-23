@@ -101,7 +101,7 @@ void actors_on_add() {
         ActorBehavior* behavior = &scene_shared_actors[instance->shared_actor_idx];
 
         // Call the update function pointer if it exists
-        if (behavior->on_add) behavior->on_add(instance->obj_idx, instance->actor_data);
+        if (behavior->on_add) behavior->on_add(instance->obj_idx, get_actor_data_by_idx(instance->data_idx));
     }
 }
 
@@ -115,7 +115,7 @@ void actors_on_destroy() {
         ActorBehavior* behavior = &scene_shared_actors[instance->shared_actor_idx];
 
         // Call the update function pointer if it exists
-        if (behavior->on_destroy) behavior->on_destroy(instance->obj_idx, instance->actor_data);
+        if (behavior->on_destroy) behavior->on_destroy(instance->obj_idx, get_actor_data_by_idx(instance->data_idx));
     }
 }
 
@@ -130,7 +130,7 @@ void actors_start() {
         ActorBehavior* behavior = &scene_shared_actors[instance->shared_actor_idx];
 
         // Call the update function pointer if it exists
-        if (behavior->start) behavior->start(instance->obj_idx, instance->actor_data);
+        if (behavior->start) behavior->start(instance->obj_idx, get_actor_data_by_idx(instance->data_idx));
     }
 }
 
@@ -145,7 +145,7 @@ void actors_update(float dt) {
         ActorBehavior* behavior = &scene_shared_actors[instance->shared_actor_idx];
 
         // Call the update function pointer if it exists
-        if (behavior->update) behavior->update(instance->obj_idx, instance->actor_data, dt);
+        if (behavior->update) behavior->update(instance->obj_idx, get_actor_data_by_idx(instance->data_idx), dt);
     }
 }
 

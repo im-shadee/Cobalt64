@@ -50,6 +50,7 @@ extern ModelInstance* scene_model_data;
 
 extern ActorBehavior* scene_shared_actors;
 extern ActorInstance* scene_actor_instances;
+extern uint8_t* scene_actor_data_blob;
 
 extern TriggerActorBehavior* scene_trigger_behaviors;
 extern TriggerActorInstance* scene_trigger_instances;
