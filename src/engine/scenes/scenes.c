@@ -46,11 +46,9 @@ Camera* scene_cameras = NULL;
 T3DModel** scene_shared_models = NULL;
 ModelInstance* scene_model_data = NULL;
 
-ActorBehavior* scene_shared_actors = NULL;
 ActorInstance* scene_actor_instances = NULL;
-
-TriggerActorBehavior* scene_trigger_behaviors = NULL;
 TriggerActorInstance* scene_trigger_instances = NULL;
+uint8_t* scene_actor_data_blob = NULL;
 
 #pragma region Scene Loading
 

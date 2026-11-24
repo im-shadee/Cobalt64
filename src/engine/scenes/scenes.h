@@ -26,9 +26,7 @@ typedef struct {
     uint16_t mesh_collider_count;
     uint16_t aabb_collider_count;
     
-    uint16_t actor_behaviour_count;
     uint16_t actor_instances_count;
-    uint16_t trigger_behaviour_count;
     uint16_t trigger_instances_count;
 
     uint8_t camera_count;
@@ -48,11 +46,9 @@ extern Camera* scene_cameras;
 extern T3DModel** scene_shared_models;
 extern ModelInstance* scene_model_data;
 
-extern ActorBehavior* scene_shared_actors;
 extern ActorInstance* scene_actor_instances;
-
-extern TriggerActorBehavior* scene_trigger_behaviors;
 extern TriggerActorInstance* scene_trigger_instances;
+extern uint8_t* scene_actor_data_blob;
 
 bool scene_init(void);
 bool scene_try_load(const uint16_t index);

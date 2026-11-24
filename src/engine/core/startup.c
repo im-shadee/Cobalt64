@@ -2,6 +2,7 @@
  * Copyright (c) 2026 Shadee
  * SPDX-License-Identifier: BSD-3-Clause
  */
+#include "actors.h"
 #include "config.h"
 #include "cobalt_math.h"
 #include "debug.h"
@@ -12,6 +13,7 @@
 #include "startup.h"
 #include "trig.h"
 #include "transform.h"
+#include <assert.h>
 #include <libdragon.h>
 #include <stdbool.h>
 #include <t3d/t3d.h>
@@ -96,12 +98,13 @@ void actors_on_add() {
 
         // Skip inactive/free slots
         if (!instance->enabled || !obj_should_render(&scene_objs[instance->obj_idx])) continue;
+        assert(instance->behavior_id < G_ACTOR_BEHAVIOR_COUNT);
 
         // Look up the shared behavior blueprint using the index
-        ActorBehavior* behavior = &scene_shared_actors[instance->shared_actor_idx];
+        const ActorBehavior* behavior = &g_actor_behavior_reg[instance->behavior_id];
 
-        // Call the update function pointer if it exists
-        if (behavior->on_add) behavior->on_add(instance->obj_idx, instance->actor_data);
+        // Call the add function pointer if it exists
+        if (behavior->on_add) behavior->on_add(instance->obj_idx, get_actor_data(instance));
     }
 }
 
@@ -110,12 +113,13 @@ void actors_on_destroy() {
         ActorInstance* instance = &scene_actor_instances[i];
 
         if (!obj_is_destroyed(&scene_objs[instance->obj_idx])) continue;
+        assert(instance->behavior_id < G_ACTOR_BEHAVIOR_COUNT);
 
         // Look up the shared behavior blueprint using the index
-        ActorBehavior* behavior = &scene_shared_actors[instance->shared_actor_idx];
+        const ActorBehavior* behavior = &g_actor_behavior_reg[instance->behavior_id];
 
-        // Call the update function pointer if it exists
-        if (behavior->on_destroy) behavior->on_destroy(instance->obj_idx, instance->actor_data);
+        // Call the destroy function pointer if it exists
+        if (behavior->on_destroy) behavior->on_destroy(instance->obj_idx, get_actor_data(instance));
     }
 }
 
@@ -125,12 +129,13 @@ void actors_start() {
 
         // Skip inactive/free slots
         if (!instance->enabled || !obj_should_render(&scene_objs[instance->obj_idx])) continue;
+        assert(instance->behavior_id < G_ACTOR_BEHAVIOR_COUNT);
 
         // Look up the shared behavior blueprint using the index
-        ActorBehavior* behavior = &scene_shared_actors[instance->shared_actor_idx];
+        const ActorBehavior* behavior = &g_actor_behavior_reg[instance->behavior_id];
 
-        // Call the update function pointer if it exists
-        if (behavior->start) behavior->start(instance->obj_idx, instance->actor_data);
+        // Call the start function pointer if it exists
+        if (behavior->start) behavior->start(instance->obj_idx, get_actor_data(instance));
     }
 }
 
@@ -140,12 +145,13 @@ void actors_update(float dt) {
 
         // Skip inactive/free slots
         if (!instance->enabled || !obj_should_render(&scene_objs[instance->obj_idx])) continue;
+        assert(instance->behavior_id < G_ACTOR_BEHAVIOR_COUNT);
 
         // Look up the shared behavior blueprint using the index
-        ActorBehavior* behavior = &scene_shared_actors[instance->shared_actor_idx];
+        const ActorBehavior* behavior = &g_actor_behavior_reg[instance->behavior_id];
 
         // Call the update function pointer if it exists
-        if (behavior->update) behavior->update(instance->obj_idx, instance->actor_data, dt);
+        if (behavior->update) behavior->update(instance->obj_idx, get_actor_data(instance), dt);
     }
 }
 

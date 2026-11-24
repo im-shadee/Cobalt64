@@ -2,8 +2,8 @@
  * Copyright (c) 2026 Shadee
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#ifndef ACTOR_BEHAVIOUR_H
-#define ACTOR_BEHAVIOUR_H
+#ifndef ACTOR_BEHAVIOR_H
+#define ACTOR_BEHAVIOR_H
 
 #include "actor_data.h"
 #include <stdint.h>
@@ -23,4 +23,7 @@ typedef struct {
     void (*update)(uint16_t obj_idx, ActorData actor_data, float dt);
 } ActorBehavior; // 16 bytes
 
-#endif // ACTOR_BEHAVIOUR_H
+extern const ActorBehavior g_actor_behavior_reg[];
+extern const uint16_t G_ACTOR_BEHAVIOR_COUNT;
+
+#endif // ACTOR_BEHAVIOR_H

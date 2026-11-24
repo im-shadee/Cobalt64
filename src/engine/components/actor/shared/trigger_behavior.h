@@ -23,4 +23,7 @@ typedef struct {
     TriggerCallback on_trigger_exit;
 } TriggerActorBehavior; // 12 bytes
 
+extern const TriggerActorBehavior g_trigger_behavior_reg[];
+extern const uint16_t G_TRIGGER_BEHAVIOR_COUNT;
+
 #endif // TRIGGER_BEHAVIOUR_H

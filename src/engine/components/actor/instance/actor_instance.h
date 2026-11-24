@@ -12,15 +12,16 @@
 /** 
  * Ties a specific game object to its actor instance data.
  * Stores an index pointing to its ActorBehaviour, an enabled flag, and an actor data pointer.
- * 
- * remarks: Use 'actor_data' to define per-instance variables such as health, speed, etc.
  */
 typedef struct
 {
-    ActorData actor_data; // Custom data specific to each instance (e.g. per-instance health, speed variables, etc.).
-    uint16_t shared_actor_idx; // Points to the shared ActorBehavior.
+    uint32_t data_byte_offset; // Byte offset to instance-specific actor data (e.g. per-instance health, speed variables, etc.).
+    uint16_t behavior_id; // Points to the shared ActorBehavior.
     uint16_t obj_idx; // Object index associated with this instance.
     bool enabled; // Whether this object is enabled. If not, it does not run the shared actor behavior.
+    uint8_t padding_[3];
 } ActorInstance; // 12 bytes
+
+ActorData get_actor_data(const ActorInstance* instance);
 
 #endif // ACTOR_INSTANCE_H
