@@ -16,7 +16,7 @@
 typedef struct
 {
     uint32_t data_byte_offset; // Byte offset to instance-specific actor data (e.g. per-instance health, speed variables, etc.).
-    uint16_t shared_actor_idx; // Points to the shared ActorBehavior.
+    uint16_t behavior_id; // Points to the shared ActorBehavior.
     uint16_t obj_idx; // Object index associated with this instance.
     bool enabled; // Whether this object is enabled. If not, it does not run the shared actor behavior.
     uint8_t padding_[3];
