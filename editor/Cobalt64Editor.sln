@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt64.Editor", "Cobalt64.Editor\Cobalt64.Editor.csproj", "{0AE3B8B4-1420-472F-A116-3DF3A489660C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cobalt64Editor.Tests", "Cobalt64Editor.Tests\Cobalt64Editor.Tests.csproj", "{89566AEF-F0D4-4ADC-A1EA-ECB190A143BD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{0AE3B8B4-1420-472F-A116-3DF3A489660C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0AE3B8B4-1420-472F-A116-3DF3A489660C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0AE3B8B4-1420-472F-A116-3DF3A489660C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89566AEF-F0D4-4ADC-A1EA-ECB190A143BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89566AEF-F0D4-4ADC-A1EA-ECB190A143BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89566AEF-F0D4-4ADC-A1EA-ECB190A143BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89566AEF-F0D4-4ADC-A1EA-ECB190A143BD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
