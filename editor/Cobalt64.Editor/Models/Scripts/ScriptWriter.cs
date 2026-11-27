@@ -1,7 +1,11 @@
+/*
+ * Copyright (c) 2026 Shadee
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 using System;
 using System.Globalization;
 using System.IO;
-using Cobalt64.Editor.Models.PathExtensions;
+using Cobalt64.Editor.Models.FileExtensions;
 
 namespace Cobalt64.Editor.Models.Scripts;
 
@@ -24,7 +28,7 @@ public static class ScriptWriter
     /// <summary>
     /// Writes a .c and a .h file in <paramref name="path"/> with <paramref name="fileName"/> as their name.
     /// </summary>
-    public static void WriteScript(string path, string fileName) 
+    public static void WriteScripts(string path, string fileName) 
     {
         WriteScriptFile(path, fileName, eScriptLanguage.C);
         WriteScriptFile(path, fileName, eScriptLanguage.H);
@@ -32,26 +36,10 @@ public static class ScriptWriter
 
     internal static void WriteScriptFile(string path, string fileName, eScriptLanguage scLang)
     {
-        // General validation
-        if (!PathValidator.ValidatePath(path))
-        {
-            throw new PathException($"Path '{path}' contains illegal characters or is empty.", path);
-        }
-
-        if (!ValidateScriptName(fileName))
-        {
-            throw new InvalidScriptNameException(
-                $"Script name cannot contain any invalid characters ({PathValidator.FormattedFileChars}).",
-                nameof(fileName)
-            );
-        }
-
-        string fullPath = Path.Join(path, fileName, GetExtensionFor(scLang));
-        StreamWriter sw = File.CreateText(fullPath);
+        string fullFileName = fileName + GetExtensionFor(scLang);
+        StreamWriter sw = FileCreator.CreateFile(path, fullFileName);
         sw.Write(GetContentFor(scLang, fileName));
     }
-
-    internal static bool ValidateScriptName(string fileName) => fileName.ContainsAny(PathValidator.InvalidFileChars);
 
     internal static string GetExtensionFor(eScriptLanguage scLang)
     {
