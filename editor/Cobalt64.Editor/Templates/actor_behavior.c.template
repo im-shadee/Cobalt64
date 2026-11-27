@@ -1,0 +1,19 @@
+#include "{{FILE_NAME}}.h"
+#include <cobalt64/cobalt64.h>
+#include <stdint.h>
+
+void {{PREFIX}}_on_add(uint16_t obj_idx, ActorData actor_data) {
+	// Called once when the actor spawns
+}
+
+void {{PREFIX}}_start(uint16_t obj_idx, ActorData actor_data) {
+	// Called once before update()
+}
+
+void {{PREFIX}}_update(uint16_t obj_idx, ActorData actor_data, float dt) {
+	// Called every frame
+}
+
+void {{PREFIX}}_on_destroy(uint16_t obj_idx, ActorData actor_data) {
+	// Called when the actor is destroyed
+}

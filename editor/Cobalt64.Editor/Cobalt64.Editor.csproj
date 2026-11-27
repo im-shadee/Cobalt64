@@ -25,4 +25,8 @@
     <ItemGroup>
         <InternalsVisibleTo Include="Cobalt64Editor.Tests" />
     </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Templates\**\*.tpl" />
+    </ItemGroup>
 </Project>

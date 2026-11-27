@@ -1,0 +1,16 @@
+#pragma once
+#include <cobalt64/cobalt64.h>
+#include <stdint.h>
+
+/* Actor Data */
+
+typedef struct {{FILE_NAME}}_s {
+	/* Instance variables */
+} {{FILE_NAME}}_t;
+
+/* Cobalt Lifecycle */
+
+void {{PREFIX}}_on_add(uint16_t obj_idx, ActorData actor_data);
+void {{PREFIX}}_start(uint16_t obj_idx, ActorData actor_data);
+void {{PREFIX}}_update(uint16_t obj_idx, ActorData actor_data, float dt);
+void {{PREFIX}}_on_destroy(uint16_t obj_idx, ActorData actor_data);

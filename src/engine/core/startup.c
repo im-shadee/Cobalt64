@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #include "actors.h"
-#include "config.h"
+#include "config_data.h"
 #include "cobalt_math.h"
 #include "debug.h"
 #include "layers.h"
@@ -174,18 +174,18 @@ void libdragon_setup(void) {
     dfs_init(DFS_DEFAULT_LOCATION); // Initialize the filesystem (allows to read files bundled into the ROM)
     display_init(
         (resolution_t){
-            .height = ENGINE_RES_HEIGHT, 
-            .width = ENGINE_RES_WIDTH, 
-            .interlaced = ((ENGINE_RES_HEIGHT) > 288) ? INTERLACE_HALF : INTERLACE_OFF,
+            .height = g_cobalt_conf.res_height, 
+            .width = g_cobalt_conf.res_width, 
+            .interlaced = ((g_cobalt_conf.res_height) > 288) ? INTERLACE_HALF : INTERLACE_OFF,
         }, 
         DEPTH_16_BPP, 
-        FRAMEBUFFER_COUNT, 
+        g_cobalt_conf.fb_count, // Framebuffers
         GAMMA_NONE, 
         FILTERS_RESAMPLE
     );
 
     rdpq_init();
-    rdpq_mode_dithering(DITHER_MODE);
+    rdpq_mode_dithering(g_cobalt_conf.dither_mode);
     joypad_init();
     t3d_init((T3DInitParams){});
 }
